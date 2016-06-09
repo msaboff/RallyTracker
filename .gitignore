@@ -1,0 +1,9 @@
+# Ignore all emacs backup files
+*~
+
+# Ignore vim temp files
+*.swp
+
+# Ignore OpenOffice lock files
+.~*#
+
