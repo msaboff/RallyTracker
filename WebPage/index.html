@@ -1,0 +1,89 @@
+<!doctype html>
+
+<html lang="en" manifest="rally-tracker.manifest">
+<head>
+<meta charset="utf-8">
+
+<title>Rally Tracker</title>
+<meta name="description" content="Rally Tracker">
+<meta name="author" content="Michael Saboff">
+
+<link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body onload="init()">
+<script src="js/waypoints.json"></script>
+<script src="js/main.js"></script>
+<h1>Rally Tracker</h1>
+<table style="width:100%">
+  <thead>
+    <tr>
+      <th class="status-center">Lat.</th>
+      <th class="status-center">Long.</th>
+      <th class="status-center">GS</th>
+      <th class="status-center">Req. GS</th>
+      <th class="status-center">Course</th>
+      <th class="status-center">Altitude</th>
+      <th class="status-center">Accuracy</th>
+      <th class="status-center">GPS Time</th>
+      <th class="status-center">Time</th>
+      <th class="status-center">ETA Wpt</th>
+      <th class="status-center">ETA Gate</th>
+      <th class="status-center">Delta Time</th>
+    </tr>
+  <thead>
+    <tr>
+      <td><div class="status-center" id="currentLatitude"></div></td>
+      <td><div class="status-center" id="currentLongitude"></div></td>
+      <td><div class="status-center" id="currentSpeed"></div></td>
+      <td><div class="status-center" id="requireGS"></div></td>
+      <td><div class="status-center" id="currentCourse"></div></td>
+      <td><div class="status-center" id="currentAltitude"></div></td>
+      <td><div class="status-center" id="currentAccuracy"></div></td>
+      <td><div class="status-center" id="currentTimeStamp"></div></td>
+      <td><div class="status-center" id="currentTime"></div></td>
+      <td><div class="status-center" id="timeToWaypoint"></div></td>		
+      <td><div class="status-center" id="timeToGate"></div></td>
+      <td><div class="status-center" id="deltaTime"></div></td>
+    </tr>
+</table>
+<table id="engineConfigs" style="width:100%">
+	<tr>
+		<th>Config</th>
+	</tr>
+	<tr>
+		<th>RPM</th>
+	</tr>
+	<tr>
+		<th>MP</th>
+	</tr>
+	<tr>
+		<th>FF</th>
+	</tr>
+	<tr>
+		<th>TAS</th>
+	</tr>
+</table>
+<br>
+<table id="waypoints" style="width:100%">
+  <tr>
+    <th>Wpt</th>
+    <th>Lat.</th>
+    <th>Long.</th>
+    <th>Leg Dist</th>
+    <th>Cumm Dist</th>
+    <th>HDG</th>
+    <th>Est TAS</th>
+    <th>Est GS</th>
+    <th>Act GS</th>
+    <th>ETE</th>
+    <th>ATE</th>
+  <tr>
+</table>
+<br>
+<br>
+<div id="status"></d
+
+iv>
+</body>
+</html>
