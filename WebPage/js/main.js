@@ -34,6 +34,50 @@ if (typeof(Number.prototype.toDegrees) === "undefined") {
     }
 }
 
+class Time
+{
+    constructor(time)
+    {
+        if (time instanceof Date) {
+            this.seconds = time.valueOf();
+            return;
+        }
+
+        if (time instanceof String) {
+            // Add later if needed
+            this.seconds = 0;
+            return;
+        }
+
+        if (typeof time == "number") {
+            this.seconds = time;
+            return;
+        }
+
+        this.seconds = 0;
+    }
+
+    toString()
+    {
+        var seconds = this.seconds % 60;
+        var minutes = this.seconds / 60 | 0;
+        var hours = minutes / 60 | 0;
+        minutes = minutes % 60;
+
+        var result = "";
+        if (hours)
+            result = result + hours + ":";
+        if (minutes < 10)
+            result = result + "0";
+        result = result + minutes + ":";
+        if (seconds < 10)
+            result = result + "0";
+        result = result + seconds;
+
+        return result;
+    }
+}
+
 class GeoLocation
 {
     constructor(latitude, longitude)
@@ -45,9 +89,9 @@ class GeoLocation
     latitudeString()
     {
 	var latitude = this.latitude.toFixed(6)
-	var latitudeSuffix = "&deg N";
+	var latitudeSuffix = "&degN";
 	if (latitude < 0) {
-	    latitudeSuffix = "&deg S"
+	    latitudeSuffix = "&degS"
 	    latitude = -latitude;
 	}
 	return latitude + latitudeSuffix;
@@ -56,9 +100,9 @@ class GeoLocation
     longitudeString()
     {
 	var longitude = this.longitude.toFixed(6);
-	var longitudeSuffix = "&deg E";
+	var longitudeSuffix = "&degE";
 	if (longitude < 0) {
-	    longitudeSuffix = "&deg W"
+	    longitudeSuffix = "&degW"
 	    longitude = -longitude;
 	}	
 	return longitude + longitudeSuffix; 
@@ -152,8 +196,14 @@ class EngineConfig
 
     static appendConfig(type, rpm, manifoldPressure, fuelFlow, trueAirspeed)
     {
+        if (this.allConfigsByType[type]) {
+            status("Duplicate Engine configuration: " + type);
+            return;
+        }
+
         var newConfig = new EngineConfig(type, rpm, manifoldPressure, fuelFlow, trueAirspeed);
         this.allConfigs.push(newConfig);
+        this.allConfigsByType[type] = newConfig;
 
     }
 
@@ -174,6 +224,7 @@ class EngineConfig
 }
 
 EngineConfig.allConfigs = [];
+EngineConfig.allConfigsByType = {};
 EngineConfig.currentConfig = 0;
 
 class LocationStatus
@@ -257,11 +308,14 @@ class Leg
         this.actGS = 0;
         this.ete = 0;
         this.ate = 0;
+        this.estFuel = 0;
+        this.actFuel = 0;
 	this.row = waypointsTableElement.insertRow(this.index + 1)
 	this.cells = [];
-        // Wpt, Lat., Long., Leg Dist., Cumm Dist., Heading, Est TAS, Est GS, Act GS, ETE, ATE
-	for (var i = 0; i < 11; i++) {
+        // Wpt, Lat., Long., Leg Dist., Cumm Dist., Heading, Est TAS, Est GS, Act GS, ETE, ATE, Est Fuel, Act Fuel
+	for (var i = 0; i < 13; i++) {
 	    this.cells[i] = this.row.insertCell(i);
+            this.cells[i].className = "waypoint-cell";
 	}
 	this.updateTable();
     }
@@ -277,8 +331,10 @@ class Leg
         this.cells[6].innerHTML = this.estTAS;
         this.cells[7].innerHTML = this.estGS;
         this.cells[8].innerHTML = this.actGS;
-        this.cells[9].innerHTML = this.ete ? this.ete.toTimeString() : "";
+        this.cells[9].innerHTML = this.ete ? this.ete.toString() : "";
         this.cells[10].innerHTML = this.ate;
+        this.cells[11].innerHTML = this.estFuel;
+        this.cells[12].innerHTML = this.actFuel;
     }
 
     updateDistanceAndBearing(other)
@@ -286,8 +342,10 @@ class Leg
 	this.distance = this.location.distanceTo(other);
 	this.heading = this.location.bearingFrom(other);
         if (this.ete == 0 && this.estGS != 0) {
-            var ete = this.distance * 3600 / this.estGS;
-            this.ete = new Date(ete * 1000);
+            var eteSeconds = Math.round(this.distance * 3600 / this.estGS);
+            this.ete = new Time(eteSeconds);
+            
+            
         }
 	this.updateTable();
     }
@@ -393,7 +451,7 @@ var dbName = "RallyTrackerDB";
 
 function openDB()
 {
-    var request = indexedDB.open(dbName, 2);
+    var request = indexedDB.open(dbName, 1);
 
     request.onerror = function(event) {
         status("Could not open " + dbName + " IndexedDB");
@@ -401,7 +459,7 @@ function openDB()
     };
     request.onsuccess = function(event) {
         db = event.target.result;
-        setTimeout(start(), 0);
+         setTimeout(start(), 0);
     };
     request.onupgradeneeded = function(event) {
         db = event.target.result;
@@ -411,83 +469,36 @@ function openDB()
 
 function createObjectStores()
 {
-    var faaObjectStore = db.createObjectStore("faaWaypoints", { keyPath: "name" });
-    faaObjectStore.createIndex("type", "type", {unique: false });
+    var faaWaypointOS = db.createObjectStore("faaWaypoints", { keyPath: "name" });
+    faaWaypointOS.createIndex("type", "type", {unique: false });
 
-    var userObjectStore = db.createObjectStore("userWaypoints", { keyPath: "name" });
+    var userWaypointOS = db.createObjectStore("userWaypoints", { keyPath: "name" });
+
+    var aircraftOS = db.createObjectStore("aircraft", { keyPath: "nNumber" });
+
+    var flightPlanOS = db.createObjectStore("flightPlans", { keyPath: "name" });
+    flightPlanOS.createIndex("description", "description", { unique: false });
+
+    var flightLogOS = db.createObjectStore("flightLogs", { keyPath: "dateFlown" });
+    flightLogOS.createIndex("name", "name", { unique: false });
 
     var faaRecordsLoaded = 0;
     for (var i in faaWaypoints) {
-        faaObjectStore.add(faaWaypoints[i]);
+        faaWaypointOS.add(faaWaypoints[i]);
         faaRecordsLoaded++;
     }
 
     var userRecordsLoaded = 0;
     for (var i in userWaypoints) {
-        userObjectStore.add(userWaypoints[i]);
+        userWaypointOS.add(userWaypoints[i]);
         userRecordsLoaded++;
     }
 
     status("Loaded " + faaRecordsLoaded + " FAA and " + userRecordsLoaded + " user records");
 
-    faaObjectStore.transaction.oncomplete = function(event) {
-//        setTimeout(start(), 0);
+    faaWaypointOS.transaction.oncomplete = function(event) {
     };
 }
-
-/*
-var currentWPIndex = 0;
-var lengthFaaWP = faaWaypoints.length;
-var lengthUserWP = userWaypoints.length;
-
-function addNextFaaWaypoint()
-{
-    if (currentWPIndex >= lengthFaaWP) {
-        status("Total records imported " + currentWPIndex);
-        populateUserWaypoints();
-        return;
-    }
-
-    if ((currentWPIndex % 100) == 0)
-        status("Importing record " + currentWPIndex);
-
-    var transaction = db.transaction(["faaWaypoints"], "readwrite");
-    var waypointsObjectStore = transaction.objectStore("faaWaypoints");
-
-    waypointsObjectStore.add(faaWaypoints[currentWPIndex++]);
-    
-    transaction.oncomplete = addNextFaaWaypoint;
-}
-
-function populateFaaWaypoints()
-{
-    currentWPIndex = 0;
-    addNextFaaWaypoint();
-}
-
-function addNextUserWaypoint()
-{
-    if (currentWPIndex >= lengthUserWP) {
-        status("Total records imported " + currentWPIndex);
-        return;
-    }
-
-    status("Importing record " + currentWPIndex);
-
-    var transaction = db.transaction(["userWaypoints"], "readwrite");
-    var waypointsObjectStore = transaction.objectStore("userWaypoints");
-
-    waypointsObjectStore.add(userWaypoints[currentWPIndex++]);
-    
-    transaction.oncomplete = addNextUserWaypoint;
-}
-
-function populateUserWaypoints()
-{
-    currentWPIndex = 0;
-    addNextUserWaypoint();
-}
-*/    
 
 var waypointsToLookup = [];
 

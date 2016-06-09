@@ -7,7 +7,7 @@ tr:hover {
 }
 
 tr:nth-child(even) {
-    background-color: #f2f2f2;
+    background-color: Azure;
 }
 
 .status-center {
@@ -26,4 +26,8 @@ tr:nth-child(even) {
     text-align: center;
     font-weight: bold;
     background-color: #ffbfbf;
+}
+
+.waypoint-cell {
+    text-align: center;
 }
