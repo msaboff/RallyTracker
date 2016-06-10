@@ -82,63 +82,63 @@ class GeoLocation
 {
     constructor(latitude, longitude)
     {
-	this.latitude = latitude;
-	this.longitude = longitude;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     latitudeString()
     {
-	var latitude = this.latitude.toFixed(6)
-	var latitudeSuffix = "&degN";
-	if (latitude < 0) {
-	    latitudeSuffix = "&degS"
-	    latitude = -latitude;
-	}
-	return latitude + latitudeSuffix;
+        var latitude = this.latitude.toFixed(6)
+        var latitudeSuffix = "&degN";
+        if (latitude < 0) {
+            latitudeSuffix = "&degS"
+            latitude = -latitude;
+        }
+        return latitude + latitudeSuffix;
     }
 
     longitudeString()
     {
-	var longitude = this.longitude.toFixed(6);
-	var longitudeSuffix = "&degE";
-	if (longitude < 0) {
-	    longitudeSuffix = "&degW"
-	    longitude = -longitude;
-	}	
-	return longitude + longitudeSuffix; 
+        var longitude = this.longitude.toFixed(6);
+        var longitudeSuffix = "&degE";
+        if (longitude < 0) {
+            longitudeSuffix = "&degW"
+            longitude = -longitude;
+        }
+        return longitude + longitudeSuffix;
     }
 
     distanceTo(otherLocation)
     {
-	var dLat = (otherLocation.latitude - this.latitude).toRadians();
-	var dLon = (otherLocation.longitude - this.longitude).toRadians(); 
-	var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-	    Math.cos(this.latitude.toRadians()) * Math.cos(otherLocation.latitude.toRadians()) * 
-	    Math.sin(dLon/2) * Math.sin(dLon/2); 
-	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-	return earthRadius * c;
+        var dLat = (otherLocation.latitude - this.latitude).toRadians();
+        var dLon = (otherLocation.longitude - this.longitude).toRadians();
+        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(this.latitude.toRadians()) * Math.cos(otherLocation.latitude.toRadians()) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return earthRadius * c;
     }
     
     bearingFrom(otherLocation)
     {
-	var dLon = (this.longitude - otherLocation.longitude).toRadians();
-	var thisLatitudeRadians = this.latitude.toRadians();
-	var otherLatitudeRadians = otherLocation.latitude.toRadians();
-	var y = Math.sin(dLon) * Math.cos(this.latitude.toRadians());
-	var x = Math.cos(otherLatitudeRadians) * Math.sin(thisLatitudeRadians) -
-	    Math.sin(otherLatitudeRadians) * Math.cos(thisLatitudeRadians) * Math.cos(dLon);
-	return (Math.atan2(y, x).toDegrees() + 720 + magneticVariation) % 360;
+        var dLon = (this.longitude - otherLocation.longitude).toRadians();
+        var thisLatitudeRadians = this.latitude.toRadians();
+        var otherLatitudeRadians = otherLocation.latitude.toRadians();
+        var y = Math.sin(dLon) * Math.cos(this.latitude.toRadians());
+        var x = Math.cos(otherLatitudeRadians) * Math.sin(thisLatitudeRadians) -
+            Math.sin(otherLatitudeRadians) * Math.cos(thisLatitudeRadians) * Math.cos(dLon);
+        return (Math.atan2(y, x).toDegrees() + 720 + magneticVariation) % 360;
     }
 
     bearingTo(otherLocation)
     {
-	var dLon = (otherLocation.longitude - this.longitude).toRadians();
-	var thisLatitudeRadians = this.latitude.toRadians();
-	var otherLatitudeRadians = otherLocation.latitude.toRadians();
-	var y = Math.sin(dLon) * Math.cos(otherLocation.latitude.toRadians());
-	var x = Math.cos(thisLatitudeRadians) * Math.sin(otherLatitudeRadians) -
-	    Math.sin(thisLatitudeRadians) * Math.cos(otherLatitudeRadians) * Math.cos(dLon);
-	return (Math.atan2(y, x).toDegrees() + 720 + magneticVariation) % 360
+        var dLon = (otherLocation.longitude - this.longitude).toRadians();
+        var thisLatitudeRadians = this.latitude.toRadians();
+        var otherLatitudeRadians = otherLocation.latitude.toRadians();
+        var y = Math.sin(dLon) * Math.cos(otherLocation.latitude.toRadians());
+        var x = Math.cos(thisLatitudeRadians) * Math.sin(otherLatitudeRadians) -
+            Math.sin(thisLatitudeRadians) * Math.cos(otherLatitudeRadians) * Math.cos(dLon);
+        return (Math.atan2(y, x).toDegrees() + 720 + magneticVariation) % 360
     }
 }
 
@@ -156,7 +156,7 @@ class EngineConfig
         var rows = engineConfigTableElement.rows;
 
         for (var i = 0; i < 5; i++)
-	    this.cells[i] = rows.item(i).insertCell(-1);
+            this.cells[i] = rows.item(i).insertCell(-1);
 
         this.deselect();
     }
@@ -187,11 +187,11 @@ class EngineConfig
 
     updateTable()
     {
-	this.cells[0].innerHTML = this.type;
-	this.cells[1].innerHTML = this.rpm;
-	this.cells[2].innerHTML = this.manifoldPressure;
-	this.cells[3].innerHTML = this.fuelFlow;
-	this.cells[4].innerHTML = this.trueAirspeed;
+        this.cells[0].innerHTML = this.type;
+        this.cells[1].innerHTML = this.rpm;
+        this.cells[2].innerHTML = this.manifoldPressure;
+        this.cells[3].innerHTML = this.fuelFlow;
+        this.cells[4].innerHTML = this.trueAirspeed;
     }
 
     static appendConfig(type, rpm, manifoldPressure, fuelFlow, trueAirspeed)
@@ -250,46 +250,58 @@ class LocationStatus
         this.timeToWaypointElement = document.getElementById("timeToWaypoint");
         this.timeToGateElement = document.getElementById("timeToGate");
     }
-	
+
     getFeetOrNull(meters)
     {
-	var feet = "";
-	
-	if (meters)
-	    feet = (meters * metersToFeet).toFixed(0) + "'";
+        var feet = "";
 
-	return feet;
+        if (meters)
+            feet = (meters * metersToFeet).toFixed(0) + "'";
+
+        return feet;
     }
 
     update(position)
     {
-	var latitude = position.coords.latitude.toFixed(4);
-	var latitudeSuffix = "&degN";
-	if (latitude < 0) {
-	    latitudeSuffix = "&degS"
-	    latitude = -latitude;
-	}
-	this.latitudeElement.innerHTML = latitude + latitudeSuffix;
+        var latitude = position.coords.latitude.toFixed(4);
+        var latitudeSuffix = "&degN";
+        if (latitude < 0) {
+            latitudeSuffix = "&degS"
+            latitude = -latitude;
+        }
+        this.latitudeElement.innerHTML = latitude + latitudeSuffix;
 
-	var longitude = position.coords.longitude.toFixed(4);
-	var longitudeSuffix = "&degE";
-	if (longitude < 0) {
-	    longitudeSuffix = "&degW"
-	    longitude = -longitude;
-	}	
-	this.longitudeElement.innerHTML = longitude + longitudeSuffix;
-	var speed = position.coords.speed * this.speedConvert;
-	this.speedElement.innerHTML = speed.toFixed(1) + " " + this.speedUnits;
-	var heading = "";
-	if (position.coords.heading)
-	    heading = position.coords.heading.toFixed(0) + "&deg";
-	this.courseElement.innerHTML = heading;
-	this.altitudeElement.innerHTML = this.getFeetOrNull(position.coords.altitude);
-	this.accuracyElement.innerHTML = this.getFeetOrNull(position.coords.accuracy);
-	var time = new Date(position.timestamp);
-	this.timestampElement.innerHTML = time.toTimeString().split(" ")[0];
-	var now = new Date();
-	this.currentTimeElement.innerHTML = now.toTimeString().split(" ")[0];
+        var longitude = position.coords.longitude.toFixed(4);
+        var longitudeSuffix = "&degE";
+        if (longitude < 0) {
+            longitudeSuffix = "&degW"
+            longitude = -longitude;
+        }
+        this.longitudeElement.innerHTML = longitude + longitudeSuffix;
+        var speed = position.coords.speed * this.speedConvert;
+        this.speedElement.innerHTML = speed.toFixed(1) + " " + this.speedUnits;
+        var heading = "";
+        if (position.coords.heading)
+            heading = position.coords.heading.toFixed(0) + "&deg";
+        this.courseElement.innerHTML = heading;
+        this.altitudeElement.innerHTML = this.getFeetOrNull(position.coords.altitude);
+        this.accuracyElement.innerHTML = this.getFeetOrNull(position.coords.accuracy);
+        var time = new Date(position.timestamp);
+        this.timestampElement.innerHTML = time.toTimeString().split(" ")[0];
+        var now = new Date();
+        this.currentTimeElement.innerHTML = now.toTimeString().split(" ")[0];
+    }
+}
+
+class Waypoint
+{
+    constructor(name, type, description, latitude, longitude)
+    {
+        this.name = name;
+        this.type = type;
+        this.description = description;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 }
 
@@ -297,12 +309,12 @@ class Leg
 {
     constructor(index, fix, location)
     {
-	this.index = index;
-	this.fix = fix;
-	this.location = location;
-	this.distance = 0;
+        this.index = index;
+        this.fix = fix;
+        this.location = location;
+        this.distance = 0;
         this.cumDistance = 0;
-	this.heading = 0;
+        this.heading = 0;
         this.estTAS = 120;
         this.estGS = 112
         this.actGS = 0;
@@ -310,24 +322,31 @@ class Leg
         this.ate = 0;
         this.estFuel = 0;
         this.actFuel = 0;
-	this.row = waypointsTableElement.insertRow(this.index + 1)
-	this.cells = [];
+        this.row = waypointsTableElement.insertRow(this.index + 1)
+        this.cells = [];
         // Wpt, Lat., Long., Leg Dist., Cumm Dist., Heading, Est TAS, Est GS, Act GS, ETE, ATE, Est Fuel, Act Fuel
-	for (var i = 0; i < 13; i++) {
-	    this.cells[i] = this.row.insertCell(i);
+        for (var i = 0; i < 13; i++) {
+            this.cells[i] = this.row.insertCell(i);
             this.cells[i].className = "waypoint-cell";
-	}
-	this.updateTable();
+        }
+        this.updateTable();
     }
-    
+
+    remove()
+    {
+        waypointsTableElement.deleteRow(this.row.rowIndex);
+        Leg.allLegs.splice(this.index, 1);
+        Leg.updateRows();
+    }
+
     updateTable()
     {
-	this.cells[0].innerHTML = this.fix;
-	this.cells[1].innerHTML = this.location.latitudeString();
-	this.cells[2].innerHTML = this.location.longitudeString();
-	this.cells[3].innerHTML = this.distance.toFixed(2);
+        this.cells[0].innerHTML = this.fix;
+        this.cells[1].innerHTML = this.location.latitudeString();
+        this.cells[2].innerHTML = this.location.longitudeString();
+        this.cells[3].innerHTML = this.distance.toFixed(2);
         this.cells[4].innerHTML = this.cumDistance.toFixed(2);
-	this.cells[5].innerHTML = this.heading.toFixed(0);
+        this.cells[5].innerHTML = this.heading.toFixed(0);
         this.cells[6].innerHTML = this.estTAS;
         this.cells[7].innerHTML = this.estGS;
         this.cells[8].innerHTML = this.actGS;
@@ -339,15 +358,15 @@ class Leg
 
     updateDistanceAndBearing(other)
     {
-	this.distance = this.location.distanceTo(other);
-	this.heading = this.location.bearingFrom(other);
+        this.distance = this.location.distanceTo(other);
+        this.heading = this.location.bearingFrom(other);
         if (this.ete == 0 && this.estGS != 0) {
             var eteSeconds = Math.round(this.distance * 3600 / this.estGS);
             this.ete = new Time(eteSeconds);
             
             
         }
-	this.updateTable();
+        this.updateTable();
     }
 
     static updatePositionToActiveLeg(currentLocation)
@@ -366,8 +385,10 @@ class Leg
             return;
 
         var currentLeg = this.allLegs[0];
+        currentLeg.index = 0;
         for (var i = 1; i < this.allLegs.length; i++) {
             var nextLeg = this.allLegs[i];
+            nextLeg.index = i;
             nextLeg.updateDistanceAndBearing(currentLeg.location);
             currentLeg = nextLeg;
         }
@@ -390,6 +411,26 @@ class Leg
         var leg = new Leg(this.allLegs.length, fix, location);
         this.allLegs.push(leg);
         this.updateRows();
+    }
+
+    static removeAll()
+    {
+        while (this.allLegs.length) {
+            var leg = this.allLegs[0];
+            leg.remove();
+        }
+    }
+
+    static currentRoute()
+    {
+        var result = "";
+        for (var i = 0; i < this.allLegs.length; i++) {
+            if (i)
+                result = result + " ";
+            result = result + this.allLegs[i].fix;
+        }
+
+        return result;
     }
 }
 
@@ -434,10 +475,11 @@ function logPosition(position) {
     currentLocation = new GeoLocation(position.coords.latitude, position.coords.longitude);
 
     if (locationStatus)
-	locationStatus.update(position);
+        locationStatus.update(position);
     Leg.updatePositionToActiveLeg(currentLocation);
 }
 
+/* Add this via UI
 var userWaypoints = [
     { "name":"OILCAMP", "type":"User", "description":"Oil Camp", "latitude":36.68471, "longitude":-120.50277},
     { "name":"I5.WESTSHIELDS", "type":"User", "description":"I5 & West Shields", "latitude":36.77774, "longitude":-120.72426},
@@ -445,6 +487,7 @@ var userWaypoints = [
     { "name":"I5.VOLTA", "type":"User", "description":"I5 & Volta", "latitude":37.01419, "longitude":-120.92878},
     { "name":"PT.ALPHA", "type":"User", "description":"I5 & 152", "latitude":37.05665, "longitude":-120.96990}
 ];
+*/
 
 var db;
 var dbName = "RallyTrackerDB";
@@ -488,13 +531,7 @@ function createObjectStores()
         faaRecordsLoaded++;
     }
 
-    var userRecordsLoaded = 0;
-    for (var i in userWaypoints) {
-        userWaypointOS.add(userWaypoints[i]);
-        userRecordsLoaded++;
-    }
-
-    status("Loaded " + faaRecordsLoaded + " FAA and " + userRecordsLoaded + " user records");
+    status("Loaded " + faaRecordsLoaded + " FAA records");
 
     faaWaypointOS.transaction.oncomplete = function(event) {
     };
@@ -510,16 +547,33 @@ function getWaypoints(waypoints)
 
 function getNextWaypoint()
 {
-    if (waypointsToLookup.length) {
-        var nextWaypoint = waypointsToLookup.shift();
-        getWaypoint(nextWaypoint, waypointResult);
+    var nextWaypoint = "";
+
+    while (waypointsToLookup.length) {
+        nextWaypoint = waypointsToLookup.shift().trim();
+        if (nextWaypoint)
+            break;
     }
+
+    if (!nextWaypoint)
+        return;
+
+    getWaypoint(nextWaypoint, true, userWaypointResult);
 }
 
-function getWaypoint(name, callback)
+function getWaypoint(name, user, callback)
 {
-    var transaction = db.transaction(["userWaypoints"], "readonly");
-    var waypointsObjectStore = transaction.objectStore("userWaypoints");
+    var transaction;
+    var waypointsObjectStore
+
+    if (user) {
+        transaction = db.transaction(["userWaypoints"], "readonly");
+        waypointsObjectStore = transaction.objectStore("userWaypoints");
+    } else {
+        transaction = db.transaction(["faaWaypoints"], "readonly");
+        waypointsObjectStore = transaction.objectStore("faaWaypoints");
+    }
+
     var request = waypointsObjectStore.get(name);
 
     request.onsuccess = function(event) {
@@ -529,6 +583,14 @@ function getWaypoint(name, callback)
     request.onerror = function(event) {
         callback(name, undefined);
     }
+}
+
+function userWaypointResult(name, waypoint)
+{
+    if (waypoint)
+        waypointResult(name, waypoint);
+    else
+        getWaypoint(name, false, waypointResult);
 }
 
 function waypointResult(name, waypoint)
@@ -541,10 +603,88 @@ function waypointResult(name, waypoint)
     getNextWaypoint();
 }
 
+function putUserWaypoint(waypoint, callback)
+{
+    var transaction = db.transaction(["userWaypoints"], "readwrite");
+    var waypointsObjectStore = transaction.objectStore("userWaypoints");
+    var request = waypointsObjectStore.put(waypoint);
+
+    request.onsuccess = function(event) {
+        callback(waypoint, request.result);
+    }
+
+    request.onerror = function(event) {
+        callback(waypoint, undefined);
+    }
+}
+
+function showPopup(popupId, show)
+{
+    if (show) {
+        document.getElementById(popupId).style.display='block';
+        document.getElementById('fade').style.display='block';
+    } else {
+        document.getElementById(popupId).style.display='none';
+        document.getElementById('fade').style.display='none';
+    }
+}
+
+function showUserWaypointPopup()
+{
+    showPopup('user-waypoint-popup', true);
+}
+
+function createUserWaypointCallback(waypoint, result)
+{
+    status("Added User waypoint " + waypoint.name);
+}
+
+function createUserWaypoint()
+{
+    var name = document.getElementById('UserWaypointPopup_name').value;
+    var type = "User";
+    var description = document.getElementById('UserWaypointPopup_description').value;
+    var latitude = Number(document.getElementById('UserWaypointPopup_latitude').value);
+    var longitude = Number(document.getElementById('UserWaypointPopup_longitude').value);
+    var waypoint = new Waypoint(name, type, description, latitude, longitude);
+    putUserWaypoint(waypoint, createUserWaypointCallback);
+}
+
+function editUserWaypoint()
+{
+}
+
+function hideUserWaypointPopup()
+{
+    showPopup('user-waypoint-popup', false);
+}
+
+function showRoutePopup()
+{
+    var routeElem = document.getElementById('routePopup_route');
+    document.getElementById('routePopup_route').value = Leg.currentRoute();
+    showPopup('route-popup', true);
+}
+
+function cancelRoutePopup()
+{
+    showPopup('route-popup', false);
+}
+
+function submitRoutePopup()
+{
+    Leg.removeAll();
+    var routeElem = document.getElementById('routePopup_route');
+    var routeString = routeElem.value;
+    routeString = routeString.trim().toUpperCase();
+    getWaypoints(routeString);
+    cancelRoutePopup();
+}
+
 function init()
 {
     if (useMiles)
-	earthRadius = radiusOfEarthInMiles;
+        earthRadius = radiusOfEarthInMiles;
     statusElement = document.getElementById("status");
     engineConfigTableElement = document.getElementById("engineConfigs")
     waypointsTableElement = document.getElementById("waypoints");
@@ -557,8 +697,6 @@ function init()
 
 function start()
 {
-    getWaypoints("OILCAMP I5.WESTSHIELDS I5.165 I5.VOLTA PT.ALPHA");
-
     EngineConfig.appendConfig("Cold Taxi", 1000, "Rich", 2.1, 0);
     EngineConfig.appendConfig("Warm Taxi", 1000, "Rich", 1.85, 0);
     EngineConfig.appendConfig("Runup", 1800, "Rich", 5.79, 0);
@@ -568,17 +706,6 @@ function start()
     EngineConfig.appendConfig("Low Cruise", 2400, 20, 14.23, 142);
     EngineConfig.appendConfig("Pattern", 2700, 15, 7.8, 95);
     EngineConfig.selectConfig(6);
-
-//    legs.push(new Leg(0, "Home", new GeoLocation(37.307008, -122)));
-//    currentLeg = 0;
-    /*
-      var laxLocation =  new GeoLocation(33.95, -118.4);
-      legs.push(new Leg(0, "KLAX", laxLocation));
-      var jfkLocation = new GeoLocation(40.6334, -73.78334);
-      var jfkLeg = new Leg(1, "KJFK", jfkLocation);
-      jfkLeg.updateDistanceAndBearing(laxLocation);
-      legs.push(jfkLeg);
-    */
 
     startLocationUpdates();
 }

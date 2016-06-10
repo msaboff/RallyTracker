@@ -71,7 +71,7 @@
     <th>Lat.</th>
     <th>Long.</th>
     <th>Leg Dist</th>
-    <th>Cumm Dist</th>
+    <th>Dist Remain</th>
     <th>HDG</th>
     <th>Est TAS</th>
     <th>Est GS</th>
@@ -83,9 +83,26 @@
   <tr>
 </table>
 <br>
+<div id="user-waypoint-popup" class="white_content">
+  <h2>User Waypoint</h2>
+  Name: <input type="text" id="UserWaypointPopup_name"><br>
+  Description: <input type="text" id="UserWaypointPopup_description"><br>
+  Latitude: <input type="text" id="UserWaypointPopup_latitude"><br>
+  Longitude: <input type="text" id="UserWaypointPopup_longitude"><br>
+  <button onclick="createUserWaypoint()">Create</button>
+  <button onclick="editUserWaypoint()">Edit</button>
+  <button onclick="hideUserWaypointPopup()">Done</button>
+</div>
+<div id="route-popup" class="white_content">
+  <h2>Edit Route</h2>
+  Route: <textarea rows="4" cols="80" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" id="routePopup_route"></textarea><br>
+  <button onclick="cancelRoutePopup()">Cancel</button>
+  <button onclick="submitRoutePopup()">Submit</button>
+</div>
+<button onclick="showUserWaypointPopup()">User Waypoint</button>
+<button onclick="showRoutePopup()">Route</button>
 <br>
-<div id="status"></d
-
-iv>
+<div id="fade" class="black_overlay"></div>
+<div id="status"></div>
 </body>
 </html>
