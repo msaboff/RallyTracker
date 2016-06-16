@@ -3,10 +3,10 @@
 <html lang="en" manifest="rally-tracker.manifest">
 <head>
 <meta charset="utf-8">
-
-<title>Rally Tracker</title>
 <meta name="description" content="Rally Tracker">
 <meta name="author" content="Michael Saboff">
+
+<title>Rally Tracker</title>
 
 <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -21,12 +21,15 @@
       <th class="status-center">Lat.</th>
       <th class="status-center">Long.</th>
       <th class="status-center">GS</th>
+      <th class="status-center">Avg GS</th>
       <th class="status-center">Req. GS</th>
+      <th class="status-center">Delta GS</th>
       <th class="status-center">Course</th>
       <th class="status-center">Altitude</th>
       <th class="status-center">Accuracy</th>
       <th class="status-center">GPS Time</th>
       <th class="status-center">Time</th>
+      <th class="status-center">Dist to Wpt</th>
       <th class="status-center">ETA Wpt</th>
       <th class="status-center">ETA Gate</th>
       <th class="status-center">Delta Time</th>
@@ -36,12 +39,15 @@
       <td><div class="status-center" id="currentLatitude"></div></td>
       <td><div class="status-center" id="currentLongitude"></div></td>
       <td><div class="status-center" id="currentSpeed"></div></td>
-      <td><div class="status-center" id="requireGS"></div></td>
+      <td><div class="status-center" id="averageSpeed"></div></td>
+      <td><div class="status-center" id="requiredGS"></div></td>
+      <td><div class="status-center" id="deltaGS"></div></td>
       <td><div class="status-center" id="currentCourse"></div></td>
       <td><div class="status-center" id="currentAltitude"></div></td>
       <td><div class="status-center" id="currentAccuracy"></div></td>
       <td><div class="status-center" id="currentTimeStamp"></div></td>
       <td><div class="status-center" id="currentTime"></div></td>
+      <td><div class="status-center" id="distanceToWaypoint"></div></td>
       <td><div class="status-center" id="timeToWaypoint"></div></td>		
       <td><div class="status-center" id="timeToGate"></div></td>
       <td><div class="status-center" id="deltaTime"></div></td>
@@ -78,6 +84,7 @@
     <th>Act GS</th>
     <th>ETE</th>
     <th>ATE</th>
+    <th>Time Remain</th>
     <th>Est Fuel</th>
     <th>Act Fuel</th>
   <tr>
@@ -99,8 +106,18 @@
   <button onclick="cancelRoutePopup()">Cancel</button>
   <button onclick="submitRoutePopup()">Submit</button>
 </div>
+<div id="gs-popup" class="white_content">
+  <h2>Set Ground Speed</h2>
+   Ground Speed: <input type="text" id="GroundSpeedPopup_gs"><br>
+  <button onclick="cancelGroundSpeedPopup()">Cancel</button>
+  <button onclick="submitGroundSpeedPopup()">Submit</button>
+</div>
 <button onclick="showUserWaypointPopup()">User Waypoint</button>
+<button onclick="showGroundSpeedPopup()">Set Est GS</button>
 <button onclick="showRoutePopup()">Route</button>
+<button onclick="startTiming()">Start</button>
+<button onclick="markLeg()">Mark</button>
+<button onclick="markLegAsPlanned()">Mark as Planned</button>
 <br>
 <div id="fade" class="black_overlay"></div>
 <div id="status"></div>

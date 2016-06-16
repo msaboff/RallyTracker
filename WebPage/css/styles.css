@@ -14,6 +14,18 @@ tr:nth-child(even) {
     text-align: center;
 }
 
+.delta-speed-behind {
+    background-color: LightCoral;
+}
+
+.delta-speed-ahead {
+    background-color: Yellow;
+}
+
+.delta-speed-close {
+    background-color: LightGreen;
+}
+
 .engine-config-type {
     font-weight: bold;
 }
@@ -32,12 +44,9 @@ tr:nth-child(even) {
     text-align: center;
 }
 
-.floating-form2 { /*contact form wrapper*/
-    max-width: 300px;
-    padding: 30px 30px 10px 30px;
-    border: 1px solid #ddd;
-    right: 10px;
-    position: fixed; /*Form position fixed*/
+.waypoint-cell-highlight {
+    text-align: center;
+    background-color: #ffbfbf;
 }
 
 .black_overlay{
