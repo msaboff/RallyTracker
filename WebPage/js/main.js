@@ -22,15 +22,18 @@ var currentLocation = null;
 var waypointsTableElement = null;
 var engineConfigTableElement = null;
 
-var state = "Stopped";
 var timeUpdateInterval = 0;
 var startTime = null;
 var lastUpdate = new Date();
 var legStartTime = null;
+var currentAvgGS = null;
 var distanceToWaypoint = 0;
 var etaWaypoint = 0;
 var etaGate = 0;
 var deltaTime = 0;
+var priorFuelUsed = 0;
+var fuelUsed = 0;
+var TwoPI = Math.PI * 2;
 
 if (typeof(Number.prototype.toRadians) === "undefined") {
     Number.prototype.toRadians = function() {
@@ -44,74 +47,167 @@ if (typeof(Number.prototype.toDegrees) === "undefined") {
     }
 }
 
+class State
+{
+    constructor()
+    {
+        this.state = State.Stopped;
+    }
+
+    setRunning()
+    {
+        if (this.isRunning())
+            status("Error: Trying to enter Running state when already in Running state");
+
+        this.state |= State.Running;
+        status("Started Running");
+    }
+
+    clearRunning()
+    {
+        if (!this.isRunning())
+            status("Error: Trying to exit Running state when not in Running state");
+
+        this.state = this.state & ~State.Running;
+        status("Stopped Running");
+    }
+
+    isRunning()
+    {
+        return this.state & State.Running;
+    }
+
+    setTiming()
+    {
+        if (!this.isRunning())
+            status("Error: Trying to enter Timing state when already in Timingwe aren't in Running state");
+
+        if (this.isTiming())
+            status("Error: Trying to enter Timing state when already in Timing state");
+
+        this.state |= State.Timing;
+        status("Started Timing");
+    }
+
+    clearTiming()
+    {
+        if (!this.isTiming())
+            status("Error: Trying to exit Timing state when not in Timing state");
+
+        if (!this.state & State.Timing)
+            status("Error: Trying to exit Timing state when not in Timing state");
+
+        this.state = this.state & ~State.Timing;
+        status("Stopped Timing");
+    }
+
+    isTiming()
+    {
+        return this.state & State.Timing;
+    }
+
+    toString()
+    {
+        return (this.isRunning() ? "Running" : "Stopped") + (this.isTiming() ? "and Timing" : "");
+    }
+}
+
+State.Stopped = 0x0;
+State.Running = 0x1;
+State.Timing = 0x2;
+
+var state = new State();
+
+var TimeRE = new RegExp("^([0-9][0-9]?)(?:\:([0-5][0-9]))?(?:\:([0-5][0-9]))?$");
+
 class Time
 {
     constructor(time)
     {
         if (time instanceof Date) {
-            this.seconds = time.valueOf() / 1000;;
+            this._seconds = time.valueOf() / 1000;;
             return;
         }
 
-        if (time instanceof String) {
-            // Add later if needed
-            this.seconds = 0;
+        if (typeof time == "string") {
+            var match = time.match(TimeRE);
+
+            if (!match) {
+                this._seconds = 0;
+                return;
+            }
+
+            if (match[3]) {
+                var hours = parseInt(match[1].toString());
+                var minutes = parseInt(match[2].toString());
+                var seconds = parseInt(match[3].toString());
+
+                this._seconds = (hours * 60 + minutes) * 60 + seconds;
+            } else if (match[2]) {
+                var minutes = parseInt(match[1].toString());
+                var seconds = parseInt(match[2].toString());
+
+                this._seconds = minutes * 60 + seconds;
+            } else
+                this._seconds = parseInt(match[1].toString());
             return;
         }
 
         if (typeof time == "number") {
-            this.seconds = time;
+            this._seconds = Math.round(time);
             return;
         }
 
-        this.seconds = 0;
+        this._seconds = 0;
     }
 
     add(otherTime)
     {
-        return new Time(this.seconds + otherTime.seconds);
+        return new Time(this._seconds + otherTime._seconds);
     }
 
     addDate(otherDate)
     {
-        return new Date(this.seconds * 1000 + otherDate.valueOf());
+        return new Date(this._seconds * 1000 + otherDate.valueOf());
     }
 
     static differenceBetween(time2, time1)
     {
-        return new Time(((time2.valueOf() - time1.valueOf()) / 1000) | 0);
+        var seconds1 = (time1.valueOf() + 500) / 1000 | 0;
+        var seconds2 = (time2.valueOf() + 500) / 1000 | 0;
+        return new Time(seconds2 - seconds1);
     }
 
     seconds()
     {
-        return this.seconds;
+        return this._seconds;
     }
 
     minutes()
     {
-        return this.seconds / 60;
+        return this._seconds / 60;
     }
 
     hours()
     {
-        return this.seconds / 3600;
+        return this._seconds / 3600;
     }
 
     toString()
     {
         var result = "";
-        var seconds = this.seconds % 60;
+        var seconds = this._seconds % 60;
         if (seconds < 0) {
             result = "-";
             seconds = -seconds;
         }
-        var minutes = this.seconds / 60 | 0;
+        var minutes = this._seconds / 60 | 0;
         var hours = minutes / 60 | 0;
         minutes = minutes % 60;
 
         if (hours)
             result = result + hours + ":";
-        if (minutes < 10)
+        if (minutes < 10 && hours)
             result = result + "0";
         result = result + minutes + ":";
         if (seconds < 10)
@@ -132,7 +228,7 @@ class GeoLocation
 
     latitudeString()
     {
-        var latitude = this.latitude.toFixed(6)
+        var latitude = this.latitude.toFixed(4)
         var latitudeSuffix = "&degN";
         if (latitude < 0) {
             latitudeSuffix = "&degS"
@@ -143,7 +239,7 @@ class GeoLocation
 
     longitudeString()
     {
-        var longitude = this.longitude.toFixed(6);
+        var longitude = this.longitude.toFixed(4);
         var longitudeSuffix = "&degE";
         if (longitude < 0) {
             longitudeSuffix = "&degW"
@@ -204,11 +300,11 @@ class EngineConfig
 {
     constructor(type, rpm, manifoldPressure, fuelFlow, trueAirspeed)
     {
-        this.type = type;
-        this.rpm = rpm;
-        this.manifoldPressure = manifoldPressure;
-        this.fuelFlow = fuelFlow;
-        this.trueAirspeed = trueAirspeed;
+        this._type = type;
+        this._rpm = rpm;
+        this._manifoldPressure = manifoldPressure;
+        this._fuelFlow = fuelFlow;
+        this._trueAirspeed = trueAirspeed;
 
         this.cells = [];
         var rows = engineConfigTableElement.rows;
@@ -217,6 +313,16 @@ class EngineConfig
             this.cells[i] = rows.item(i).insertCell(-1);
 
         this.deselect();
+    }
+
+    trueAirspeed()
+    {
+        return this._trueAirspeed;
+    }
+
+    fuelFlow()
+    {
+        return this._fuelFlow;
     }
 
     deselect()
@@ -245,11 +351,11 @@ class EngineConfig
 
     redraw()
     {
-        this.cells[0].innerHTML = this.type;
-        this.cells[1].innerHTML = this.rpm;
-        this.cells[2].innerHTML = this.manifoldPressure;
-        this.cells[3].innerHTML = this.fuelFlow;
-        this.cells[4].innerHTML = this.trueAirspeed;
+        this.cells[0].innerHTML = this._type;
+        this.cells[1].innerHTML = this._rpm;
+        this.cells[2].innerHTML = this._manifoldPressure;
+        this.cells[3].innerHTML = this._fuelFlow;
+        this.cells[4].innerHTML = this._trueAirspeed;
     }
 
     static appendConfig(type, rpm, manifoldPressure, fuelFlow, trueAirspeed)
@@ -265,11 +371,16 @@ class EngineConfig
 
     }
 
+    static getConfig(n)
+    {
+        if (n >= this.allConfigs.length)
+            return undefined;
+
+        return this.allConfigs[n];
+    }
+
     static selectConfig(n)
     {
-        if (n == this.currentConfig || n >= this.allConfigs.length)
-            return;
-
         this.allConfigs[this.currentConfig].deselect();
         this.currentConfig = n;
         this.allConfigs[this.currentConfig].select();
@@ -277,13 +388,20 @@ class EngineConfig
 
     static currentTAS()
     {
-        return this.allConfigs[this.currentConfig].trueAirspeed;
+        return this.allConfigs[this.currentConfig]._trueAirspeed;
     }
 }
 
 EngineConfig.allConfigs = [];
 EngineConfig.allConfigsByType = {};
 EngineConfig.currentConfig = 0;
+EngineConfig.ColdTaxi = 0;
+EngineConfig.WarmTaxi = 1;
+EngineConfig.Runup = 2;
+EngineConfig.Takeoff = 3;
+EngineConfig.Climb = 4;
+EngineConfig.Cruise = 5;
+EngineConfig.Pattern= 6;
 
 class LocationStatus
 {
@@ -304,7 +422,7 @@ class LocationStatus
         this.averageSpeedElement = document.getElementById("averageSpeed");
         this.requiredGSElement = document.getElementById("requiredGS");
         this.deltaGSElement = document.getElementById("deltaGS");
-        this.courseElement = document.getElementById("currentCourse");
+        this.headingElement = document.getElementById("currentHeading");
         this.altitudeElement = document.getElementById("currentAltitude");
         this.accuracyElement = document.getElementById("currentAccuracy");
         this.timestampElement = document.getElementById("currentTimeStamp");
@@ -313,6 +431,7 @@ class LocationStatus
         this.timeToWaypointElement = document.getElementById("timeToWaypoint");
         this.timeToGateElement = document.getElementById("timeToGate");
         this.deltaTimeElement = document.getElementById("deltaTime");
+        this.fuelUsedElement = document.getElementById("fuelUsed");
     }
 
     getFeetOrNull(meters)
@@ -344,7 +463,7 @@ class LocationStatus
             }
             this.longitudeElement.innerHTML = longitude + longitudeSuffix;
             var currentSpeed = position.coords.speed * this.speedConvert;
-            this.speedElement.innerHTML = currentSpeed.toFixed(1) + " " + this.speedUnits;
+            this.speedElement.innerHTML = currentSpeed.toFixed(1);
             this.recentGroundSpeeds.unshift(currentSpeed);
             if (this.recentGroundSpeeds.length > 10) {
                 this.recentGroundSpeeds.pop();
@@ -354,13 +473,14 @@ class LocationStatus
             for (var i = 0; i < numberSpeeds; i++)
                 averageSpeed += this.recentGroundSpeeds[i];
             averageSpeed = averageSpeed / numberSpeeds;
+            currentAvgGS = averageSpeed;
             this.averageSpeedElement.innerHTML = averageSpeed.toFixed(1);
             if (typeof requiredSpeed == "string") {
                 this.requiredGSElement.innerHTML = requiredSpeed;
                 this.deltaGSElement.innerHTML = "";
                 this.deltaGSElement.className = "status-center";
             } else {
-                this.requiredGSElement.innerHTML = requiredSpeed.toFixed(1) + " " + this.speedUnits;
+                this.requiredGSElement.innerHTML = requiredSpeed.toFixed(1);
                 var deltaGS = currentSpeed - requiredSpeed;
                 if (deltaGS > 1.0) {
                     this.deltaGSElement.className = "status-center delta-speed-ahead";
@@ -369,12 +489,17 @@ class LocationStatus
                 } else {
                     this.deltaGSElement.className = "status-center delta-speed-close";
                 }
-                this.deltaGSElement.innerHTML = deltaGS.toFixed(1) + " " + this.speedUnits;
+                this.deltaGSElement.innerHTML = deltaGS.toFixed(1);
             }
             var heading = "";
-            if (position.coords.heading)
-                heading = position.coords.heading.toFixed(0) + "&deg";
-            this.courseElement.innerHTML = heading;
+            if (position.coords.heading) {
+                var headingVal = Math.round(position.coords.heading + magneticVariation);
+                headingVal = (headingVal + 360) % 360;
+                if (!headingVal)
+                    headingVal = 360;
+                heading = headingVal  + "&deg";
+            }
+            this.headingElement.innerHTML = heading;
             this.altitudeElement.innerHTML = this.getFeetOrNull(position.coords.altitude);
             this.accuracyElement.innerHTML = this.getFeetOrNull(position.coords.accuracy);
             var time = new Date(position.timestamp);
@@ -387,6 +512,7 @@ class LocationStatus
         if (etaGate instanceof Date)
             this.timeToGateElement.innerHTML = etaGate.toTimeString().split(" ")[0];
         this.deltaTimeElement.innerHTML = deltaTime ? deltaTime.toString() : "";
+        this.fuelUsedElement.innerHTML = fuelUsed.toFixed(3);
     }
 
     resetAverageGS()
@@ -409,41 +535,81 @@ class Waypoint
 
 class Leg
 {
-    constructor(index, fix, location)
+    constructor(fix, location)
     {
-        this.index = index;
+        this.index = Leg.allLegs.length;
         this.fix = fix;
         this.location = location;
+        this.startFlightTiming = false;
+        this.stopFlightTiming = false;
+        this.engineConfig = EngineConfig.Cruise;
         this.distance = 0;
+        this.legDistance = 0;
         this.distanceRemaining = 0;
         this.distanceRemainingAfterThisLeg = 0;
+        this.course = 0;
+        this.estTAS = 0;
+        this.windDirection = 0;
+        this.windSpeed = 0;
         this.heading = 0;
-        this.estTAS = 140;
-        this.estGS = 140;
+        this.estGS = 0;
         this.actGS = 0;
-        this.ete = 0;
+        this.ete = undefined;
         this.ate = 0;
         this.startTime = 0;
         this.endTime = 0;
-        this.timeRemaining = 0;
-        this.timeRemainingAfterThisLeg = 0;
+        this.estTimeRemaining = 0;
+        this.estTimeRemainingAfterThisLeg = new Time(0);
+        this.actTimeRemaining = 0;
+        this.fuelFlow = 0;
         this.estFuel = 0;
         this.actFuel = 0;
-        this.row = waypointsTableElement.insertRow(this.index + 1)
-        this.cells = [];
-        // Wpt, Lat, Long, Leg Dist, Dist remain, Hdg, Est TAS, Est GS, Act GS, ETE, ATE, Time reamin, Est Fuel, Act Fuel
-        for (var i = 0; i < 14; i++) {
-            this.cells[i] = this.row.insertCell(i);
-            this.cells[i].className = "waypoint-cell";
+        this.oat = 0;
+        this.estCummulativeFuel = 0;
+        this.actCummulativeFuel = 0;
+        this.row = [];
+        this.row[0] = waypointsTableElement.insertRow(this.index * 2)
+        this.row[1] = waypointsTableElement.insertRow(this.index * 2 + 1)
+        this.cells = new Array(22);
+
+        // Waypoint | Lat  | Leg Dist | TAS | WindDir@WindSpd | Est GS | ETE |  ETR | Fuel Flow | Est Fuel | ECF
+        //  Notes   | Long | Rem Dist | CRS |       Hdg       | Act GS | ATE |  ATR |    OAT    | Act Fuel | ACF
+
+        for (var col = 0; col <= 10; col++) {
+            this.cells[col] = this.row[0].insertCell(col);
+            this.cells[col + 11] = this.row[1].insertCell(col);
+            var width = "8%";
+            if (col == 0)
+                width = "19%";
+            else if (col == 1)
+                width = "9%";
+
+            this.cells[col].style.width = width;
         }
-        this.redrawNeeded = true;
-        this.redraw();
+
+        this.deselect();
+
+        this.cells[Leg.cellIndexTAS].leg = this;
+        this.cells[Leg.cellIndexTAS].onclick = function() { Leg.editTAS(this); };
+
+        // Edit wind popup
+        this.cells[Leg.cellIndexWind].leg = this;
+        this.cells[Leg.cellIndexWind].onclick = function() { Leg.editWind(this); };
+    }
+
+    fixName()
+    {
+        return this.fix;
     }
 
     remove()
     {
-        waypointsTableElement.deleteRow(this.row.rowIndex);
+        var rowIndex = this.row[0].rowIndex;
+        rowIndex = this.row[1].rowIndex;
+        waypointsTableElement.deleteRow(this.row[0].rowIndex);
+        waypointsTableElement.deleteRow(this.row[1].rowIndex);
         Leg.allLegs.splice(this.index, 1);
+        Leg.updateIndecies();
         Leg.updateRows();
     }
 
@@ -452,52 +618,298 @@ class Leg
         if (!this.redrawNeeded)
             return;
 
-        this.cells[0].innerHTML = this.fix;
-        this.cells[1].innerHTML = this.location.latitudeString();
-        this.cells[2].innerHTML = this.location.longitudeString();
-        this.cells[3].innerHTML = this.distance.toFixed(2);
-        this.cells[4].innerHTML = this.distanceRemaining.toFixed(2);
-        this.cells[5].innerHTML = this.heading.toFixed(0);
-        this.cells[6].innerHTML = this.estTAS;
-        this.cells[7].innerHTML = this.estGS;
-        this.cells[8].innerHTML = this.actGS;
-        this.cells[9].innerHTML = this.ete ? this.ete.toString() : "";
-        this.cells[10].innerHTML = this.ate ? this.ate.toString() : "";;
-        this.cells[11].innerHTML = this.timeRemaining;
-        this.cells[12].innerHTML = this.estFuel;
-        this.cells[13].innerHTML = this.actFuel;
+        this.cells[Leg.cellIndexWaypoint].innerHTML = this.fixName();
+        this.cells[Leg.cellIndexLatitude].innerHTML = this.location.latitudeString();
+        this.cells[Leg.cellIndexLegDistance].innerHTML = this.distance.toFixed(2);
+        this.cells[Leg.cellIndexTAS].innerHTML = this.estTAS.toFixed(0);
+        this.cells[Leg.cellIndexWind].innerHTML = this.windSpeed > 0 ? this.windDirection + "@" + this.windSpeed : "";
+        this.cells[Leg.cellIndexEstGS].innerHTML = this.estGS.toFixed(1);
+        this.cells[Leg.cellIndexETE].innerHTML = this.ete ? this.ete.toString() : "";
+        this.cells[Leg.cellIndexETR].innerHTML = this.estTimeRemaining;
+        this.cells[Leg.cellIndexFuelFlow].innerHTML = this.fuelFlow.toFixed(2);
+        this.cells[Leg.cellIndexEstFuel].innerHTML = this.estFuel.toFixed(2);
+        this.cells[Leg.cellIndexECF].innerHTML = this.estCummulativeFuel.toFixed(2);
+
+        this.cells[Leg.cellIndexNotes].innerHTML = this.notes ? this.notes : "";
+        this.cells[Leg.cellIndexLongitude].innerHTML = this.location.longitudeString();
+        this.cells[Leg.cellIndexRemainingDistance].innerHTML = this.distanceRemaining.toFixed(2);
+        this.cells[Leg.cellIndexCourse].innerHTML = this.course.toFixed(0) + "&deg";
+        this.cells[Leg.cellIndexHeading].innerHTML = this.heading.toFixed(0) + "&deg";
+        this.cells[Leg.cellIndexActGS].innerHTML = this.actGS.toFixed(1);
+        this.cells[Leg.cellIndexATE].innerHTML = this.ate ? this.ate.toString() : "";
+        this.cells[Leg.cellIndexATR].innerHTML = this.actTimeRemaining ? this.actTimeRemaining.toString() : "";
+        this.cells[Leg.cellIndexOAT].innerHTML = this.oat + "&deg";
+        this.cells[Leg.cellIndexActFuel].innerHTML = this.actFuel.toFixed(2);
+        this.cells[Leg.cellIndexACF].innerHTML = this.actCummulativeFuel.toFixed(2);
+
         this.redrawNeeded = false;
     }
 
     select()
     {
-        for (var i = 0; i < 14; i++)
-            this.cells[i].className = "waypoint-cell-highlight";
+/*  &&&& Trying to automatically scroll into view
+        var offsetTop = waypointsTableElement.offsetTop;
+        var topRow = this.row[0];
+        topRow.scrollTop = offsetTop + topRow.scrollHeight;
+*/
+        var rowClasses = "waypoint-row-highlight " + (this.index % 2 ? "waypoint-row-odd" : "row-even");
+        this.row[0].className = rowClasses;
+        this.row[1].className = rowClasses;
     }
 
     deselect()
     {
-        for (var i = 0; i < 14; i++)
-            this.cells[i].className = "waypoint-cell";
+        var rowClasses = "waypoint-row " + (this.index % 2 ? "waypoint-row-odd" : "row-even");
+        this.row[0].className = rowClasses;
+        this.row[1].className = rowClasses;
+    }
+
+    toString()
+    {
+        return this.fix;
+    }
+
+    static editTAS(cell)
+    {
+        status("Trying to edit TAS for row " + cell.leg.index);
+        showEditTASPopup(cell.leg);
+    }
+
+    static editWind(cell)
+    {
+        status("Trying to edit wind for row " + cell.leg.index);
+        showWindPopup(cell.leg);
+    }
+
+    previousLeg()
+    {
+        if (this.index)
+            return Leg.allLegs[this.index - 1];
+        return undefined;
+    }
+
+    nextLeg()
+    {
+        if (this.index < Leg.allLegs.length - 1)
+            return Leg.allLegs[this.index + 1];
+        return undefined;
     }
 
     updateDistanceAndBearing(other)
     {
         this.distance = this.location.distanceTo(other);
-        this.heading = this.location.bearingFrom(other);
-        if (this.ete == 0 && this.estGS != 0) {
+        this.course = Math.round(this.location.bearingFrom(other));
+        if (this.ete == undefined && this.estGS != 0) {
             var eteSeconds = Math.round(this.distance * 3600 / this.estGS);
             this.ete = new Time(eteSeconds);
+        }
+
+        if (this.ete.seconds())
+            this.estFuel = this.fuelFlow * this.ete.hours();
+
+        this.redrawNeeded = true;
+    }
+
+    updateActuals(date)
+    {
+        var previousLeg = this.previousLeg();
+
+        this.ate = Time.differenceBetween(date, this.startTime);
+        this.actFuel = this.fuelFlow * this.ate.hours();
+        this.actCummulativeFuel = (previousLeg ? previousLeg.actCummulativeFuel : 0) + this.actFuel;
+
+        var distanceCovered = this.legDistance - this.distance;
+        this.actGS = (this.ate.seconds() < 10 || distanceCovered < 2) ? currentAvgGS : (distanceCovered / this.ate.hours());
+        var estSecondsRemaining = this.actGS ? Math.round(this.distance * 3600 / this.actGS) : 0;
+        this.actTimeRemaining = new Time(estSecondsRemaining);
+        fuelUsed = priorFuelUsed + this.actFuel;
+        this.redrawNeeded = true;
+    }
+
+    propagateWind()
+    {
+        var windDirection = this.windDirection;
+        var windSpeed = this.windSpeed;
+
+        windDirection = (windDirection + 360) % 360;
+        if (!windDirection)
+            windDirection = 360;
+
+        for (var currLeg = this; currLeg; currLeg = currLeg.nextLeg()) {
+            currLeg.windDirection = windDirection;
+            currLeg.windSpeed = windSpeed;
+            if (currLeg.stopFlightTiming)
+                break;
+        }
+    }
+
+    updateForWind()
+    {
+        if (!this.windSpeed || !this.estTAS) {
+            this.heading = this.course;
+            this.estGS = this.estTAS;
+            return;
+        }
+
+        var windDirectionRadians = this.windDirection.toRadians();
+        var courseRadians = this.course.toRadians();
+        var swc = (this.windSpeed / this.estTAS) * Math.sin(windDirectionRadians - courseRadians);
+        if (Math.abs(swc) > 1) {
+            status("Wind to strong to fly!");
+            return;
+        }
+
+        var headingRadians = courseRadians + Math.asin(swc);
+        if (headingRadians < 0)
+            headingRadians += TwoPI;
+        if (headingRadians > TwoPI)
+            headingRadians -= TwoPI
+        var groundSpeed = this.estTAS * Math.sqrt(1 - swc * swc) -
+            this.windSpeed * Math.cos(windDirectionRadians - courseRadians);
+        if (groundSpeed < 0) {
+            status("Wind to strong to fly!");
+            return;
+        }
+
+        this.estGS = groundSpeed;
+        this.heading = Math.round(headingRadians.toDegrees());
+    }
+
+    calculateRow()
+    {
+        var engineConfig = EngineConfig.getConfig(this.engineConfig);
+
+        if (!this.estTAS)
+            this.estTAS = engineConfig.trueAirspeed();
+
+        this.updateForWind();
+        this.fuelFlow = engineConfig.fuelFlow();
+        this.redrawNeeded = true;
+    }
+
+    updateForward()
+    {
+        if (this.specialUpdateForward)
+            this.specialUpdateForward();
+
+        var previousLeg = this.previousLeg();
+        var havePrevious = true;
+        if (!previousLeg) {
+            havePrevious = false;
+            previousLeg = this;
+            if (!this.ete)
+                this.ete = new Time(0);
+        }
+
+        var thisLegType = this.type;
+        if (thisLegType == "Climb" && havePrevious)
+            this.location = previousLeg.location;
+        else {
+            this.updateDistanceAndBearing(previousLeg.location);
+            this.updateForWind();
+            this.legDistance = this.distance;
+            var nextLeg = this.nextLeg();
+            var previousLegType = previousLeg.type;
+            if (havePrevious) {
+                if (previousLegType == "Climb") {
+                    var climbDistance = distanceFromSpeedAndTime(previousLeg.estGS, previousLeg.climbTime);
+                    if (climbDistance < this.distance) {
+                        var climbStartLocation = previousLeg.location;
+                        var climbEndLocation = climbStartLocation.locationFrom(this.course, climbDistance);
+                        previousLeg.location = climbEndLocation;
+                        previousLeg.updateDistanceAndBearing(climbStartLocation);
+                        this.ete = undefined;
+                        this.updateDistanceAndBearing(climbEndLocation);
+                    } else {
+                        status("Not enough distance to climb in leg #" + previousLeg.index);
+                    }
+                } else if ((thisLegType == "Left" || thisLegType == "Right") && nextLeg && nextLeg.location) {
+                    var standardRateCircumference = this.estTAS / 30;
+                    var standardRateRadius = standardRateCircumference / TwoPI;
+                    var offsetInboundBearing = 360 + previousLeg.course + (thisLegType == "Left" ? -90 : 90);
+                    offsetInboundBearing = Math.round((offsetInboundBearing + 360) % 360);
+                    // Save original location
+                    if (!previousLeg.originalLocation)
+                        previousLeg.originalLocation = previousLeg.location;
+                    var previousLocation = previousLeg.originalLocation;
+                    var inboundLocation = previousLocation.locationFrom(offsetInboundBearing, standardRateRadius);
+                    var bearingToNext = Math.round(nextLeg.location.bearingFrom(previousLocation));
+                    var offsetOutboundBearing = bearingToNext + (thisLegType == "Left" ? 90 : -90);
+                    offsetOutboundBearing = (offsetOutboundBearing + 360) % 360;
+                    var outboundLocation = previousLocation.locationFrom(offsetOutboundBearing, standardRateRadius);
+                    var turnAngle = thisLegType == "Left" ? (360 + bearingToNext - previousLeg.course) : (360 + previousLeg.course - bearingToNext);
+                    turnAngle = (turnAngle + 360) % 360;
+                    var totalDegrees = turnAngle + 360 * this.extraTurns;
+                    var secondsInTurn = Math.round(totalDegrees / 3);
+                    this.ete = new Time(Math.round((turnAngle + 360 * this.extraTurns) / 3));
+                    this.estFuel = this.fuelFlow * this.ete.hours();
+                    this.location = outboundLocation;
+                    this.legDistance = this.distance = distanceFromSpeedAndTime(this.estTAS, this.ete);
+                    previousLeg.location = inboundLocation;
+                    var prevPrevLeg = previousLeg.previousLeg();
+                    if (prevPrevLeg && prevPrevLeg.location) {
+                        previousLeg.ete = undefined;
+                        previousLeg.updateDistanceAndBearing(prevPrevLeg.location);
+                    }
+                }
+            }
+        }
+        this.estCummulativeFuel = (havePrevious ? previousLeg.estCummulativeFuel : 0) + this.estFuel;
+        this.redrawNeeded = true;
+    }
+
+    updateBackward()
+    {
+        var nextLeg = this.nextLeg();
+
+        var distanceRemaining;
+        var timeRemaining;
+
+        if (nextLeg) {
+            distanceRemaining = nextLeg.distanceRemaining;
+            timeRemaining = nextLeg.estTimeRemaining;
+        } else {
+            distanceRemaining = 0;
+            timeRemaining = new Time(0);
+        }
+
+        if (this.stopFlightTiming || timeRemaining.seconds()) {
+            this.distanceRemainingAfterThisLeg = distanceRemaining;
+            this.distanceRemaining = distanceRemaining + this.distance;;
+            this.estTimeRemainingAfterThisLeg = timeRemaining;
+            this.estTimeRemaining = timeRemaining.add(this.ete);
+        } else {
+            this.estTimeRemainingAfterThisLeg = this.estTimeRemaining = new Time(0);
+            this.distanceRemainingAfterThisLeg = this.distanceRemaining = 0;
         }
 
         this.redrawNeeded = true;
     }
 
-    updateATE(date)
+    static count()
     {
-        this.ate = Time.differenceBetween(date, this.startTime);
+        return this.allLegs.length;
+    }
 
-        this.redrawNeeded = true;
+    static haveRoute()
+    {
+        return this.allLegs.length > 1;
+    }
+
+    static getFirstLeg()
+    {
+        if (this.allLegs.length)
+            return this.allLegs[0];
+
+        return undefined;
+    }
+
+    static getLastLeg()
+    {
+        if (this.allLegs.length)
+            return this.allLegs[this.allLegs.length - 1];
+
+        return undefined;
     }
 
     static getCurrentLeg()
@@ -520,6 +932,11 @@ class Leg
 
     static updateIndecies()
     {
+        if (this.allLegs.length == 0)
+            return;
+
+        for (var i = 0; i < this.allLegs.length; i++)
+            this.allLegs[i].index = i;
     }
 
     static updateRows()
@@ -527,43 +944,42 @@ class Leg
         if (this.allLegs.length == 0)
             return;
 
-        var thisLeg = this.allLegs[0];
-        thisLeg.index = 0;
-        thisLeg.ete = new Time(0);
-        for (var i = 1; i < this.allLegs.length; i++) {
-            var nextLeg = this.allLegs[i];
-            nextLeg.index = i;
-            nextLeg.updateDistanceAndBearing(thisLeg.location);
-            thisLeg = nextLeg;
+        var haveStartTiming = false;
+        var haveStopTiming = false;
+        for (var i = 0; i < this.allLegs.length; i++) {
+            var thisLeg = this.allLegs[i];
+            thisLeg.index = i;
+            thisLeg.calculateRow();
+            if (thisLeg.startFlightTiming) {
+                if (haveStartTiming)
+                    status("Have duplicate Start timing leg in row " + thisLeg.toString());
+                haveStartTiming = true
+            }
+            if (thisLeg.stopFlightTiming) {
+                if (haveStopTiming)
+                    status("Have duplicate Timing leg in row " + thisLeg.toString());
+                haveStopTiming = true
+            }
         }
 
-        thisLeg = this.allLegs[this.allLegs.length - 1];
-        var distanceRemaining = thisLeg.distance;
-        var timeRemaining = thisLeg.ete;
-        thisLeg.distanceRemainingAfterThisLeg = 0;
-        thisLeg.distanceRemaining = distanceRemaining;
-        thisLeg.timeRemainingAfterThisLeg = new Time(0);
-        thisLeg.timeRemaining = timeRemaining;
-        thisLeg.redraw();
-        
-        for (var i = this.allLegs.length - 1; i > 0; i--) {
-            var prevLeg = this.allLegs[i - 1];
-            prevLeg.distanceRemainingAfterThisLeg = distanceRemaining;
-            distanceRemaining = distanceRemaining + prevLeg.distance;
-            prevLeg.distanceRemaining = distanceRemaining;
-            prevLeg.timeRemainingAfterThisLeg = timeRemaining;
-            timeRemaining = timeRemaining.add(prevLeg.ete);
-            prevLeg.timeRemaining = timeRemaining;
-            prevLeg.redraw();
-            thisLeg = prevLeg;
-        }
+        if (!haveStartTiming)
+            Leg.getFirstLeg().startFlightTiming = true;
+        if (!haveStopTiming)
+            Leg.getLastLeg().stopFlightTiming = true;
+
+        for (var i = 0; i < this.allLegs.length; i++)
+            this.allLegs[i].updateForward();
+
+        for (var i = this.allLegs.length - 1; i >= 0; i--)
+            this.allLegs[i].updateBackward();
+
+        for (var i = 0; i < this.allLegs.length; i++)
+            this.allLegs[i].redraw();
     }
 
-    static appendLeg(fix, location)
+    static appendLeg(leg)
     {
-        var leg = new Leg(this.allLegs.length, fix, location);
         this.allLegs.push(leg);
-        this.updateRows();
     }
 
     static removeAll()
@@ -572,6 +988,7 @@ class Leg
             var leg = this.allLegs[0];
             leg.remove();
         }
+        RallyLeg.reset();
     }
 
     static setGroundSpeed(gs)
@@ -589,7 +1006,7 @@ class Leg
         for (var i = 0; i < this.allLegs.length; i++) {
             if (i)
                 result = result + " ";
-            result = result + this.allLegs[i].fix;
+            result = result + this.allLegs[i].toString();
         }
 
         return result;
@@ -604,15 +1021,23 @@ class Leg
         }
     }
 
-    static startTiming(time)
+    static start(time)
     {
         if (this.allLegs.length > 1) {
             if (this.currentLeg)
                 this.currentLeg.deselect();
             this.currentLegIndex = 1;
             var currLeg = this.currentLeg = this.allLegs[this.currentLegIndex];
+            var startTiming = this.allLegs[0].startFlightTiming || currLeg.startFlightTiming;
             currLeg.startTime = time;
+
+            if (startTiming) {
+                state.setTiming();
+                etaGate = currLeg.estTimeRemaining.addDate(startTime);
+            }
+
             currLeg.select();
+            EngineConfig.selectConfig(currLeg.engineConfig);
             currLeg.redraw();
         }
     }
@@ -622,7 +1047,13 @@ class Leg
         if (this.allLegs.length > 1 && this.currentLeg) {
             var currLeg = this.currentLeg;
             currLeg.endTime = markTime;
-            currLeg.updateATE(currLeg.endTime);
+            currLeg.updateActuals(currLeg.endTime);
+            priorFuelUsed = priorFuelUsed + currLeg.actFuel;
+            fuelUsed = priorFuelUsed;
+            if (state.isTiming() && (currLeg.stopFlightTiming || currLeg.index == this.allLegs.length - 1)) {
+                deltaTime = Time.differenceBetween(etaGate, markTime);
+                state.clearTiming();
+            }
             currLeg.deselect();
             currLeg.redraw();
             this.currentLegIndex++;
@@ -630,12 +1061,20 @@ class Leg
                 this.currentLeg = this.allLegs[this.currentLegIndex];
                 currLeg = this.currentLeg;
                 currLeg.startTime = markTime;
+
+                if (!state.isTiming() && currLeg.startFlightTiming) {
+                    state.setTiming();
+                    etaGate = currLeg.estTimeRemaining.addDate(markTime);
+                }
+
                 currLeg.select();
+                EngineConfig.selectConfig(currLeg.engineConfig);
                 currLeg.redraw();
             } else {
                 this.currentLegIndex = 0;
                 this.currentLeg = undefined;
-                state = "Stopped";
+                EngineConfig.selectConfig(EngineConfig.ColdTaxi);
+                state.clearRunning();
             }
         }
     }
@@ -644,6 +1083,403 @@ class Leg
 Leg.allLegs = [];
 Leg.currentLegIndex = 0;
 Leg.currentLeg = undefined;
+Leg.cellCount = 22;
+// Top row: Waypoint | Lat  | Leg Dist | TAS | WindDir@WindSpd | Est GS | ETE |  ETR | Fuel Flow | Est Fuel | ECF
+Leg.cellIndexWaypoint = 0;
+Leg.cellIndexLatitude = 1;
+Leg.cellIndexLegDistance = 2;
+Leg.cellIndexTAS = 3;
+Leg.cellIndexWind = 4;
+Leg.cellIndexEstGS = 5;
+Leg.cellIndexETE = 6;
+Leg.cellIndexETR = 7;
+Leg.cellIndexFuelFlow = 8;
+Leg.cellIndexEstFuel = 9;
+Leg.cellIndexECF = 10;
+// Bot row:  Notes   | Long | Rem Dist | CRS |       Hdg       | Act GS | ATE |  ATR |    OAT    | Act Fuel | ACF
+Leg.cellIndexNotes = 11;
+Leg.cellIndexLongitude = 12;
+Leg.cellIndexRemainingDistance = 13;;
+Leg.cellIndexCourse = 14;
+Leg.cellIndexHeading = 15;
+Leg.cellIndexActGS = 16;
+Leg.cellIndexATE = 17;
+Leg.cellIndexATR = 18;
+Leg.cellIndexOAT = 19;
+Leg.cellIndexActFuel = 20;
+Leg.cellIndexACF = 21;
+
+var RallyLegNoFixRE = new RegExp("TAXI|RUNUP|TAKEOFF|CLIMB|PATTERN|LEFT|RIGHT", "i");
+var RallyLegWithFixRE = new RegExp("^([0-9a-z\.]{3,10})\\|(START|TIMING)", "i");
+
+class RallyLeg extends Leg
+{
+    constructor(type, fix, location, engineConfig)
+    {
+        super(fix, location);
+        this.type = type;
+        this.engineConfig = engineConfig;
+    }
+
+    fixName()
+    {
+        return this.type;
+    }
+
+    toString()
+    {
+        return this.fixName();
+//        return this.fix + ":" + this.type.toUpperCase();
+    }
+
+    static reset()
+    {
+        this.startLocation = undefined;
+        this.startFix = "";
+        this.totalTaxiTime = new Time(0);
+        this.taxiSegments = [];
+    }
+
+    static isRallyLegWithoutFix(fix)
+    {
+        var barPosition = fix.indexOf("|");
+        var firstPart = barPosition < 0 ? fix : fix.substring(0, barPosition);
+
+        return RallyLegNoFixRE.test(firstPart);
+    }
+
+    static needsFix(fix)
+    {
+        return RallyLegWithFixRE.test(fix) != null;
+    }
+
+    static fixNeeded(fix)
+    {
+        var match = fix.match(RallyLegWithFixRE);
+
+        if (!match)
+            return "";
+
+        return match[1].toString();
+    }
+
+    static appendLegNoFix(waypointText)
+    {
+        var barPosition = waypointText.indexOf("|");
+        var firstPart = barPosition < 0 ? waypointText : waypointText.substring(0, barPosition);
+        firstPart = firstPart.toUpperCase();
+
+        var match = firstPart.match(RallyLegNoFixRE);
+
+        if (!match)
+            return;
+
+        var legType = match[0].toString();
+
+        switch(legType) {
+        case "TAXI":
+            var taxiLeg = new TaxiLeg(waypointText);
+            this.appendLeg(taxiLeg);
+            this.totalTaxiTime.add(taxiLeg.ete)
+            this.taxiSegments.push(taxiLeg);
+            break;
+        case "RUNUP":
+            this.appendLeg(new RunupLeg(waypointText));
+            break;
+        case "TAKEOFF":
+            if (!this.startLocation) {
+                status("Trying to create a Takeoff leg without start leg");
+                return;
+            }
+
+            this.appendLeg(new TakeoffLeg(waypointText));
+            break;
+        case "CLIMB":
+            this.appendLeg(new ClimbLeg(waypointText));
+            break;
+        case "PATTERN":
+            this.appendLeg(new PatternLeg(waypointText));
+            break;
+        case "LEFT":
+        case "RIGHT":
+            this.appendLeg(new TurnLeg(waypointText, legType == "RIGHT"));
+            break;
+        default:
+            status("Unhandled Rally Leg type " + legType);
+        }
+    }
+
+    static appendLegWithFix(waypointText, fix, location)
+    {
+        var match = waypointText.match(RallyLegWithFixRE);
+
+        if (!match)
+            return;
+
+        var legType = match[2].toString();
+
+        switch(legType) {
+        case "START":
+            if (this.startLocation) {
+                status("Trying to create second start leg");
+                return;
+            }
+
+            this.startLocation = location;
+            this.startFix = fix;
+            this.totalTaxiTime = new Time(0);
+            this.taxiSegments = [];
+
+            this.appendLeg(new StartLeg(waypointText, fix, location));
+            break;
+        case "TIMING":
+            this.appendLeg(new TimingLeg(waypointText, fix, location));
+            break;
+        default:
+            status("Unhandled Rally Leg type " + legType);
+        }
+    }
+
+}
+
+RallyLeg.startLocation = undefined;
+RallyLeg.startFix = "";
+RallyLeg.totalTaxiTime = new Time(0);
+RallyLeg.taxiSegments = [];
+
+class StartLeg extends RallyLeg
+{
+    constructor(fixText, fix, location)
+    {
+        super("Start", fix, location, EngineConfig.ColdTaxi);
+    }
+
+    fixName()
+    {
+        return this.fix + "|Start";
+    }
+}
+
+class TimingLeg extends RallyLeg
+{
+    constructor(fixText, fix, location)
+    {
+        super("Timing", fix, location, EngineConfig.Cruise);
+        this.stopFlightTiming = true;
+    }
+
+    fixName()
+    {
+        return this.fix + "|Timing";
+    }
+}
+
+// TAXI[|{COLD|WARM}][|<time>]  e.g. TAXI|COLD|2:30
+var TaxiLegRE = new RegExp("^TAXI(?:\\|(COLD|WARM))?(?:\\|([0-9][0-9]?(?:\:[0-5][0-9])?))?$", "i");
+
+class TaxiLeg extends RallyLeg
+{
+    constructor(fixText)
+    {
+        var match = fixText.match(TaxiLegRE);
+
+        var engineConfig = (match[1] && match[1].toString().toUpperCase() == "COLD")
+            ? EngineConfig.ColdTaxi
+            : EngineConfig.WarmTaxi;
+        super("Taxi", "", new GeoLocation(-1, -1), engineConfig);
+
+        var taxiTimeString = "5:00";
+        if (match[2])
+            taxiTimeString = match[2].toString();
+
+        var previousLeg = this.previousLeg();
+        if (previousLeg)
+            this.location = previousLeg.location;
+
+        this.ete = new Time(taxiTimeString);
+    }
+
+    fixName()
+    {
+        var coldWarm = "Warm";
+        if (this.engineConfig == EngineConfig.ColdTaxi)
+            coldWarm = "Cold";
+
+        return "Taxi|" + coldWarm + "|" + this.ete.toString();
+    }
+}
+
+// RUNUP[|<time>]  e.g. RUNUP|0:30
+var RunupLegRE = new RegExp("^RUNUP(?:\\|([0-9][0-9]?(?:\:[0-5][0-9])?))?$", "i");
+
+class RunupLeg extends RallyLeg
+{
+    constructor(fixText)
+    {
+        var match = fixText.match(RunupLegRE);
+
+        super("Runup", "", new GeoLocation(-1, -1), EngineConfig.Runup);
+
+        var runupTimeString = "30";
+        if (match[1])
+            runupTimeString = match[1].toString();
+
+        var previousLeg = this.previousLeg();
+        if (previousLeg)
+            this.location = previousLeg.location;
+
+        this.ete = new Time(runupTimeString);
+    }
+
+    fixName()
+    {
+        return "Runup|" + this.ete.toString();
+    }
+}
+
+// TAKEOFF[|<time>][|<bearing>|<distance>]  e.g. TAKEOFF|2:00|270@3.5
+var TakeoffLegRE = new RegExp("^TAKEOFF(?:\\|([0-9][0-9]?(?:\:[0-5][0-9])?))?(?:\\|([0-9]{1,2}|[0-2][0-9][0-9]|3[0-5][0-9]|360)(?:@)(\\d{1,2}(?:\\.\\d{1,4})?))?$", "i");
+
+class TakeoffLeg extends RallyLeg
+{
+    constructor(fixText)
+    {
+        var match = fixText.match(TakeoffLegRE);
+
+        var bearingFromStart = 0;
+        var distanceFromStart = 0;
+        var takeoffEndLocation = RallyLeg.startLocation;
+        if (match && match[2] && match[3]) {
+            bearingFromStart = parseInt(match[2].toString()) % 360;
+            distanceFromStart = parseFloat(match[3].toString());
+            takeoffEndLocation = RallyLeg.startLocation.locationFrom(bearingFromStart, distanceFromStart);
+        }
+
+        super("Takeoff", "", takeoffEndLocation, EngineConfig.Takeoff);
+
+        this.bearingFromStart = bearingFromStart;
+        this.distanceFromStart = distanceFromStart;
+
+        var takeoffTimeString = "2:00";
+        if (match[1])
+            takeoffTimeString = match[1].toString();
+
+        this.ete = new Time(takeoffTimeString);
+        this.startFlightTiming = true;
+    }
+
+    fixName()
+    {
+        var result = "Takeoff";
+
+        if (this.ete.seconds() != 120)
+            result += "|" + this.ete.toString();
+        if (this.distanceFromStart)
+            result += "|" + this.bearingFromStart + "@" + this.distanceFromStart;
+
+        return result;
+    }
+}
+
+// CLIMB|<alt>|<time>  e.g. CLIMB|5000|7:00
+var ClimbLegRE = new RegExp("^CLIMB(?:\\|)(\\d{3,5})(?:\\|([0-9][0-9]?(?:\:[0-5][0-9])?))$", "i");
+
+class ClimbLeg extends RallyLeg
+{
+    constructor(fixText)
+    {
+        var match = fixText.match(ClimbLegRE);
+
+        var altitude = 5500;
+        if (match && match[1])
+            altitude = match[1].toString();
+
+        super("Climb", altitude + "\"", undefined, EngineConfig.Climb);
+
+        var timeToClimb = "8:00";
+        if (match && match[2])
+            timeToClimb = match[2].toString();
+
+        var previousLeg = this.previousLeg();
+        if (previousLeg)
+            this.location = previousLeg.location;
+        this.altitude = altitude;
+        this.climbTime = this.ete = new Time(timeToClimb);
+    }
+
+    fixName()
+    {
+        return "Climb|" + this.altitude + "|" + this.ete.toString();
+    }
+
+    //  &&&& Don't know why I added this.
+    static isValidFix(fixText)
+    {
+        return fixText.match(ClimbLegRE) ? true : false;
+    }
+}
+
+// PATTERN|<time>  e.g. PATTERN|0:30
+var PatternLegRE = new RegExp("^PATTERN(?:\\|([0-9][0-9]?(?:\:[0-5][0-9])?))$", "i");
+
+class PatternLeg extends RallyLeg
+{
+    constructor(fixText)
+    {
+        super("Pattern", "", undefined, EngineConfig.Pattern);
+
+        var previousLeg = this.previousLeg();
+        if (previousLeg)
+            this.location = previousLeg.location;
+
+        var match = fixText.match(PatternLegRE);
+        var patternTimeString = match[1].toString();
+        this.ete = new Time(patternTimeString);
+    }
+
+    fixName()
+    {
+        return "Pattern|" + this.ete.toString();
+    }
+}
+
+// {LEFT,RIGHT}[|+<extra_turns>]  e.g. LEFT|2
+var TurnLegRE = new RegExp("^(LEFT|RIGHT)(?:\\|\\+(\\d))?$", "i");
+
+class TurnLeg extends RallyLeg
+{
+    constructor(fixText, isRightTurn)
+    {
+        var match = fixText.match(TurnLegRE);
+
+        var direction = "Left";
+        if (match && match[1])
+            direction = match[1].toString().toUpperCase() == "LEFT" ? "Left" : "Right";
+
+        var engineConfig = EngineConfig.Cruise;
+        var lastLeg = Leg.getLastLeg();
+        if (lastLeg)
+            engineConfig = lastLeg.engineConfig;
+
+        super(direction, "", new GeoLocation(-1, -1), engineConfig);
+
+        this.extraTurns = (match && match[2]) ? parseInt(match[2]) : 0;
+    }
+
+    fixName()
+    {
+        var result = this.type;
+        if (this.extraTurns)
+            result += ("|+" + this.extraTurns);
+
+        return result;
+    }
+}
+
+function distanceFromSpeedAndTime(speed, time)
+{
+    return speed * time.hours();
+}
 
 var geolocationOptions = {
   enableHighAccuracy: true, 
@@ -691,7 +1527,7 @@ function updateTimeAndPosition(position) {
 
     timeSinceLastUpdate = now;
 
-    if (state == "Running")
+    if (state.isTiming())
         deltaTime = Time.differenceBetween(etaGate, now);
 
     var groundSpeedRequired;
@@ -715,10 +1551,11 @@ function updateTimeAndPosition(position) {
 
     if (Leg.getCurrentLeg()) {
         var currLeg = Leg.getCurrentLeg();
-        currLeg.updateATE(now);
+        currLeg.updateActuals(now);
         currLeg.redraw();
     }
 }
+
 
 /* Add this via UI */
 var userWaypoints = [
@@ -805,13 +1642,27 @@ function getNextWaypoint()
             break;
     }
 
-    if (!nextWaypoint)
+    if (!nextWaypoint) {
+        Leg.updateRows();
         return;
+    }
 
-    getWaypoint(nextWaypoint, true, userWaypointResult);
+    if (RallyLeg.isRallyLegWithoutFix(nextWaypoint))
+        getRallyWaypointWithoutFix(nextWaypoint);
+    else {
+        var fixName = RallyLeg.fixNeeded(nextWaypoint);
+        var isRallyWaypoint = false;
+
+        if (fixName)
+            isRallyWaypoint = true;
+        else
+            fixName = nextWaypoint;
+
+        getWaypoint(fixName, nextWaypoint, isRallyWaypoint, true, userWaypointResult);
+    }
 }
 
-function getWaypoint(name, user, callback)
+function getWaypoint(fixName, originalFix, isRallyWaypoint, user, callback)
 {
     var transaction;
     var waypointsObjectStore
@@ -824,33 +1675,45 @@ function getWaypoint(name, user, callback)
         waypointsObjectStore = transaction.objectStore("faaWaypoints");
     }
 
-    var request = waypointsObjectStore.get(name);
+    var request = waypointsObjectStore.get(fixName);
 
     request.onsuccess = function(event) {
-        callback(name, request.result);
+        callback(fixName, originalFix, isRallyWaypoint, request.result);
     }
 
     request.onerror = function(event) {
-        callback(name, undefined);
+        callback(fixName, originalFix, isRallyWaypoint, undefined);
     }
 }
 
-function userWaypointResult(name, waypoint)
+function userWaypointResult(name, originalFix, isRallyWaypoint, waypoint)
 {
     if (waypoint)
-        waypointResult(name, waypoint);
+        waypointResult(name, originalFix, isRallyWaypoint, waypoint);
     else
-        getWaypoint(name, false, waypointResult);
+        getWaypoint(name, originalFix, isRallyWaypoint, false, waypointResult);
 }
 
-function waypointResult(name, waypoint)
+function waypointResult(name, originalFix, isRallyWaypoint, waypoint)
 {
-    if (waypoint)
-        Leg.appendLeg(waypoint.name, new GeoLocation(waypoint.latitude, waypoint.longitude));
-    else
+    if (waypoint) {
+        var location = new GeoLocation(waypoint.latitude, waypoint.longitude);
+
+        if (isRallyWaypoint)
+            RallyLeg.appendLegWithFix(originalFix, name, location);
+        else
+            Leg.appendLeg(new Leg(waypoint.name, location));
+    } else
         status("Couldn't find waypoint: " + name);
 
     getNextWaypoint();
+}
+
+function getRallyWaypointWithoutFix(waypoint)
+{
+    RallyLeg.appendLegNoFix(waypoint);
+
+    setTimeout(getNextWaypoint(), 0);
 }
 
 function putUserWaypoint(waypoint, callback)
@@ -911,10 +1774,15 @@ function hideUserWaypointPopup()
 
 function showRoutePopup()
 {
+    if (state.isRunning())
+        return;
+
     var routeElem = document.getElementById('routePopup_route');
     var existingRoute = Leg.currentRoute();
+/*
     if (!existingRoute)
         existingRoute = "OILCAMP I5.WESTSHIELDS I5.165 I5.VOLTA PT.ALPHA";
+*/
     document.getElementById('routePopup_route').value = existingRoute;
     showPopup('route-popup', true);
 }
@@ -955,30 +1823,103 @@ function submitGroundSpeedPopup()
     cancelGroundSpeedPopup();
 }
 
-function startTiming()
+var legEditing;
+function showEditTASPopup(leg)
 {
-    if (state == "Stopped") {
+    if (state.isRunning())
+        return;
+
+    legEditing = leg;
+    var tasElem = document.getElementById('EditTASPopup_tas');
+    tasElem.value = leg.estTAS;
+    showPopup('tas-popup', true);
+}
+
+function cancelEditTASPopup()
+{
+    showPopup('tas-popup', false);
+}
+
+function submitEditTASPopup()
+{
+    var tas = document.getElementById('EditTASPopup_tas').value;
+    tas = Number(tas);
+    if (tas > 0) {
+        legEditing.estTAS = tas;
+        legEditing.ete = undefined;;
+    }
+
+    Leg.updateRows();
+    cancelEditTASPopup();
+}
+
+function showWindPopup(leg)
+{
+    if (state.isRunning())
+        return;
+
+    legEditing = leg;
+    var windDirectionElem = document.getElementById('WindPopup_direction');
+    windDirectionElem.value = leg.windDirection;
+    var windSpeedElem = document.getElementById('WindPopup_speed');
+    windSpeedElem.value = leg.windSpeed;
+    showPopup('wind-popup', true);
+}
+
+function cancelWindPopup()
+{
+    showPopup('wind-popup', false);
+}
+
+function submitWindPopup()
+{
+    var windChanged = false;
+    var windDirection = document.getElementById('WindPopup_direction').value;
+    if (windDirection) {
+        windDirection = parseInt(windDirection);
+        if (windDirection >= 0 && windDirection <= 360) {
+            legEditing.windDirection = windDirection;
+            windChanged = true;
+        }
+    }
+
+    var windSpeed = document.getElementById('WindPopup_speed').value;
+    if (windSpeed) {
+        windSpeed = parseInt(windSpeed);
+        legEditing.windSpeed = windSpeed;
+        windChanged = true;
+    }
+
+    if (windChanged) {
+        legEditing.propagateWind();
+        Leg.updateRows();
+    }
+
+    cancelWindPopup();
+}
+
+function startRunning()
+{
+    if (Leg.haveRoute() && !state.isRunning()) {
         startTime = new Date();
+        priorFuelUsed = fuelUsed = 0;
         legStartTime = startTime;
         startLocationUpdates();
-        state = "Running";
+        state.setRunning();
         Leg.resetCurrentLeg();
-        Leg.startTiming(startTime);
+        Leg.start(startTime);
         var currLeg = Leg.getCurrentLeg();
         currLeg.startTime = legStartTime;
-        etaGate = currLeg.timeRemaining.addDate(startTime);
         etaWaypoint = currLeg.ete.addDate(startTime);
     }
 }
 
 function markLeg()
 {
-    if (state == "Running") {
+    if (state.isRunning()) {
         var now = new Date();
         Leg.markCurrentLeg(false, now)
-        if (state == "Stopped")
-            deltaTime = Time.differenceBetween(etaGate, now);
-        else {
+        if (state.isRunning()) {
             var leg = Leg.getCurrentLeg();
             etaWaypoint = leg.ete.addDate(now);
         }
@@ -987,7 +1928,7 @@ function markLeg()
 
 function markLegAsPlanned()
 {
-    if (state == "Running") {
+    if (state.isRunning()) {
     }
 }
 
@@ -1008,14 +1949,14 @@ function init()
 function start()
 {
     // Bonanza configuration
-    EngineConfig.appendConfig("Cold Taxi", 1000, "Rich", 2.1, 0);
+    EngineConfig.appendConfig("Cold Taxi", 1000, "Rich", 2.10, 0);
     EngineConfig.appendConfig("Warm Taxi", 1000, "Rich", 1.85, 0);
     EngineConfig.appendConfig("Runup", 1800, "Rich", 5.79, 0);
-    EngineConfig.appendConfig("Takeoff", 2700, "Rich", 26.09, 125);
+    EngineConfig.appendConfig("Takeoff", 2700, "Rich", 26.09, 105);
     EngineConfig.appendConfig("Climb", 2500, 25, 19.15, 125);
     EngineConfig.appendConfig("Cruise", 2400, 20, 14.10, 142);
-    EngineConfig.appendConfig("Pattern", 2700, 15, 7.8, 95);
-    EngineConfig.selectConfig(5);
+    EngineConfig.appendConfig("Pattern", 2700, 15, 7.80, 95);
+    EngineConfig.selectConfig(EngineConfig.ColdTaxi);
 
 /*  // Cessna configuration
     EngineConfig.appendConfig("Cold Taxi", 1000, 0, 1.5, 0);

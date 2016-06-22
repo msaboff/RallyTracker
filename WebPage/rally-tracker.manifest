@@ -1,12 +1,10 @@
 CACHE MANIFEST
-# Sat Jun 15 21:17:00 PDT 2016
-# /index.html
-# /js/main.js
-# /js/waypoints.json
-# /css/styles.css
-
-NETWORK:
+# Tue Jun 22 07:41:00 PDT 2016
+/
 /index.html
 /js/main.js
 /js/waypoints.json
 /css/styles.css
+
+NETWORK:
+

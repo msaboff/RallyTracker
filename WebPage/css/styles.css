@@ -1,12 +1,67 @@
+#statusTable {
+    border: 1px solid black;
+    border-spacing: 0;
+}
+
+#engineConfigs {
+    border: 1px solid black;
+    border-spacing: 0;
+}
+
+#waypointHeader {
+    border: 1px solid black;
+    border-bottom: hidden;
+    border-spacing: 0;
+}
+
 table, th, td {
     border: 1px solid black;
+}
+
+table.scroll {
+    width: 100%; /* 140px * 5 column + 16px scrollbar width */
+    border-top: hidden;
+    border-spacing: 0;
+/*    border: 2px solid black; */
+}
+
+table.scroll tbody,
+table.scroll thead tr { display: block; }
+
+table.scroll tbody {
+/*    height: 00px; */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+table.scroll tbody td,
+table.scroll thead th {
+    width: 140px; */
+    border-right: 1px solid black;
+}
+
+/*
+table.scroll thead th:last-child {
+    width: 156px; /* 140px + 16px scrollbar width */
+/*} */
+
+thead tr th {
+    height: 30px;
+    line-height: 30px;
+    /*text-align: left;*/
+}
+
+tbody { border-top: 2px solid black; }
+
+tbody td:last-child, thead th:last-child {
+    border-right: none !important;
 }
 
 tr:hover {
     background-color: #f5f5f5;
 }
 
-tr:nth-child(even) {
+.config-row:nth-child(even) {
     background-color: Azure;
 }
 
@@ -28,6 +83,7 @@ tr:nth-child(even) {
 
 .engine-config-type {
     font-weight: bold;
+    width: 12%;
 }
 
 .engine-config {
@@ -40,11 +96,19 @@ tr:nth-child(even) {
     background-color: #ffbfbf;
 }
 
-.waypoint-cell {
+.waypoint-row-even {
+    background-color: White;
+}
+
+.waypoint-row-odd {
+    background-color: Azure;
+}
+
+.waypoint-row {
     text-align: center;
 }
 
-.waypoint-cell-highlight {
+.waypoint-row-highlight {
     text-align: center;
     background-color: #ffbfbf;
 }
