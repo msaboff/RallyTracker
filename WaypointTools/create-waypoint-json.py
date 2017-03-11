@@ -109,7 +109,7 @@ class WaypointData:
             if isFirst:
                 isFirst = False
             else:
-                outputFile.write(',\n')bb;
+                outputFile.write(',\n');
             outputFile.write('    {{ \"name\":"{0}", \"type\":"{1}", \"description\":"{2}", \"latitude\":{3}, \"longitude\":{4}}}'.format(waypoint[0], waypoint[1], waypoint[2], waypoint[3], waypoint[4]))
         outputFile.write('\n];\n');
 
