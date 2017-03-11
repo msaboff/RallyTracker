@@ -1,0 +1,142 @@
+#statusTable {
+    border: 1px solid black;
+    border-spacing: 0;
+}
+
+#engineConfigs {
+    border: 1px solid black;
+    border-spacing: 0;
+}
+
+#waypointHeader {
+    border: 1px solid black;
+    border-bottom: hidden;
+    border-spacing: 0;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+table.scroll {
+    width: 100%; /* 140px * 5 column + 16px scrollbar width */
+    border-top: hidden;
+    border-spacing: 0;
+/*    border: 2px solid black; */
+}
+
+table.scroll tbody,
+table.scroll thead tr { display: block; }
+
+table.scroll tbody {
+/*    height: 00px; */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+table.scroll tbody td,
+table.scroll thead th {
+    width: 140px; */
+    border-right: 1px solid black;
+}
+
+/*
+table.scroll thead th:last-child {
+    width: 156px; /* 140px + 16px scrollbar width */
+/*} */
+
+thead tr th {
+    height: 30px;
+    line-height: 30px;
+    /*text-align: left;*/
+}
+
+tbody { border-top: 2px solid black; }
+
+tbody td:last-child, thead th:last-child {
+    border-right: none !important;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
+
+.config-row:nth-child(even) {
+    background-color: Azure;
+}
+
+.status-center {
+    text-align: center;
+}
+
+.delta-speed-behind {
+    background-color: LightCoral;
+}
+
+.delta-speed-ahead {
+    background-color: Yellow;
+}
+
+.delta-speed-close {
+    background-color: LightGreen;
+}
+
+.engine-config-type {
+    font-weight: bold;
+    width: 12%;
+}
+
+.engine-config {
+    text-align: center;
+}
+
+.engine-config-highlight {
+    text-align: center;
+    font-weight: bold;
+    background-color: #ffbfbf;
+}
+
+.waypoint-row-even {
+    background-color: White;
+}
+
+.waypoint-row-odd {
+    background-color: Azure;
+}
+
+.waypoint-row {
+    text-align: center;
+}
+
+.waypoint-row-highlight {
+    text-align: center;
+    background-color: #ffbfbf;
+}
+
+.black_overlay{
+    display: none;
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    z-index:1001;
+    -moz-opacity: 0.8;
+    opacity:.50;
+    filter: alpha(opacity=80);
+}
+
+.white_content {
+    display: none;
+    position: absolute;
+    top: 25%;
+    left: 25%;
+    width: 50%;
+    height: 50%;
+    padding: 16px;
+    border: 10px solid blue;
+    background-color: white;
+    z-index:1002;
+    overflow: auto;
+}

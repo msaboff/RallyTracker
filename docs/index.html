@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en" manifest="rally-tracker.manifest">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Rally Tracker">
+<meta name="author" content="Michael Saboff">
+
+<title>Rally Tracker</title>
+
+<link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body onload="init()">
+<script src="js/waypoints.json"></script>
+<script src="js/main.js"></script>
+<table id="statusTable" style="width:100%">
+  <thead>
+    <tr>
+      <th class="status-center">Lat.</th>
+      <th class="status-center">Long.</th>
+      <th class="status-center">GS</th>
+      <th class="status-center">Avg GS</th>
+      <th class="status-center">Req. GS</th>
+      <th class="status-center">Delta GS</th>
+      <th class="status-center">Heading</th>
+      <th class="status-center">Altitude</th>
+      <th class="status-center">Accuracy</th>
+      <th class="status-center">GPS Time</th>
+      <th class="status-center">Time</th>
+      <th class="status-center">Dist to Wpt</th>
+      <th class="status-center">ETA Wpt</th>
+      <th class="status-center">ETA Gate</th>
+      <th class="status-center">Delta Time</th>
+      <th class="status-center">Fuel Used</th>
+    </tr>
+  <thead>
+    <tr>
+      <td><div class="status-center" id="currentLatitude"></div></td>
+      <td><div class="status-center" id="currentLongitude"></div></td>
+      <td><div class="status-center" id="currentSpeed"></div></td>
+      <td><div class="status-center" id="averageSpeed"></div></td>
+      <td><div class="status-center" id="requiredGS"></div></td>
+      <td><div class="status-center" id="deltaGS"></div></td>
+      <td><div class="status-center" id="currentHeading"></div></td>
+      <td><div class="status-center" id="currentAltitude"></div></td>
+      <td><div class="status-center" id="currentAccuracy"></div></td>
+      <td><div class="status-center" id="currentTimeStamp"></div></td>
+      <td><div class="status-center" id="currentTime"></div></td>
+      <td><div class="status-center" id="distanceToWaypoint"></div></td>
+      <td><div class="status-center" id="timeToWaypoint"></div></td>		
+      <td><div class="status-center" id="timeToGate"></div></td>
+      <td><div class="status-center" id="deltaTime"></div></td>
+      <td><div class="status-center" id="fuelUsed"></div></td>
+    </tr>
+</table>
+<table id="engineConfigs" style="width:100%">
+  <tr class="config-row">
+    <th style="width:16%">Config</th>
+  </tr>
+  <tr class="config-row">
+    <th>RPM</th>
+  </tr>
+  <tr class="config-row">
+    <th>MP</th>
+  </tr>
+  <tr class="config-row">
+    <th>FF</th>
+  </tr>
+  <tr class="config-row">
+    <th>TAS</th>
+  </tr>
+</table>
+<br>
+<table id="waypointHeader" style="width:100%">
+  <tr>
+    <th style="width:19%">Waypoint</th>
+    <th style="width:9%">Lat.</th>
+    <th style="width:8%">Leg Dist</th>
+    <th style="width:8%">TAS</th>
+    <th style="width:8%">Wind</th>
+    <th style="width:8%">Est GS</th>
+    <th style="width:8%">ETE</th>
+    <th style="width:8%">ETR</th>
+    <th style="width:8%">FF</th>
+    <th style="width:8%">Est Fuel</th>
+    <th style="width:8%">ECF</th>
+  </tr>
+  <tr>
+    <th>Notes</th>
+    <th>Long.</th>
+    <th>Rem Dist</th>
+    <th>CRS</th>
+    <th>HDG</th>
+    <th>Act GS</th>
+    <th>ATE</th>
+    <th>ATR</th>
+    <th>OAT</th>
+    <th>Act Fuel</th>
+    <th>ACF</th>
+  </tr>
+</table>
+<table id="waypoints" class="scroll" style="width:100%">
+</table>
+<br>
+<div id="user-waypoint-popup" class="white_content">
+  <h2>User Waypoint</h2>
+  Name: <input type="text" id="UserWaypointPopup_name"><br>
+  Description: <input type="text" id="UserWaypointPopup_description"><br>
+  Latitude: <input type="text" id="UserWaypointPopup_latitude"><br>
+  Longitude: <input type="text" id="UserWaypointPopup_longitude"><br>
+  <button onclick="createUserWaypoint()">Create</button>
+  <button onclick="editUserWaypoint()">Edit</button>
+  <button onclick="hideUserWaypointPopup()">Done</button>
+</div>
+<div id="route-popup" class="white_content">
+  <h2>Edit Route</h2>
+  Route: <textarea rows="4" cols="80" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" id="routePopup_route"></textarea><br>
+  <button onclick="cancelRoutePopup()">Cancel</button>
+  <button onclick="submitRoutePopup()">Submit</button>
+</div>
+<div id="gs-popup" class="white_content">
+  <h2>Set Ground Speed</h2>
+   Ground Speed: <input type="text" id="GroundSpeedPopup_gs"><br>
+  <button onclick="cancelGroundSpeedPopup()">Cancel</button>
+  <button onclick="submitGroundSpeedPopup()">Submit</button>
+</div>
+<div id="tas-popup" class="white_content">
+  <h2>True Airspeed</h2>
+  Est True Airspeed: <input type="text" id="EditTASPopup_tas"><br>
+  <button onclick="cancelEditTASPopup()">Cancel</button>
+  <button onclick="submitEditTASPopup()">Submit</button>
+</div>
+<div id="wind-popup" class="white_content">
+  <h2>Wind</h2>
+  Wind Direection: <input type="text" id="WindPopup_direction">
+  At Speed: <input type="text" id="WindPopup_speed"><br>
+  <button onclick="cancelWindPopup()">Cancel</button>
+  <button onclick="submitWindPopup()">Submit</button>
+</div>
+<button onclick="showUserWaypointPopup()">User Waypoint</button>
+<button onclick="showGroundSpeedPopup()">Set Est GS</button>
+<button onclick="showRoutePopup()">Route</button>
+<button onclick="startRunning()">Start</button>
+<button onclick="markLeg()">Mark</button>
+<br>
+<div id="fade" class="black_overlay"></div>
+<div id="status"></div>
+</body>
+</html>
