@@ -1483,8 +1483,8 @@ function distanceFromSpeedAndTime(speed, time)
 
 var geolocationOptions = {
   enableHighAccuracy: true, 
-  maximumAge        : 30000, 
-  timeout           : 10000
+  maximumAge        : 0, 
+    timeout           : 1000
 };
 
 var watchPositionID = 0;
