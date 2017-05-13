@@ -3,10 +3,10 @@ CACHE MANIFEST
 
 CACHE:
 /RallyTracker/index.html
-# /RallyTracker/js/main.js
+/RallyTracker/js/main.js
 /RallyTracker/js/waypoints.json
 /RallyTracker/css/styles.css
 
 NETWORK:
 
-/RallyTracker/js/main.js
+# /RallyTracker/js/main.js
