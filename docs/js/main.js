@@ -1573,7 +1573,8 @@ var dbName = "RallyTrackerDB";
 function openDB()
 {
     var _indexedDB = window._indexedDB || window.indexedDB || window.webkitIndexedDB;
-    var request = _indexedDB.open(dbName, 1);
+//    var request = _indexedDB.open(dbName, 1);
+    var request = _indexedDB.deleteDatabase(dbName, 1);
 
     request.onerror = function(event) {
         status("Could not open " + dbName + " IndexedDB");
@@ -1581,12 +1582,50 @@ function openDB()
     };
     request.onsuccess = function(event) {
         db = event.target.result;
-         setTimeout(start(), 0);
+//        updateDBIfNeeded();
+        setTimeout(start(), 0);
     };
     request.onupgradeneeded = function(event) {
         db = event.target.result;
         createObjectStores();
     };        
+}
+
+function updateDBIfNeeded()
+{
+    updateFAAObjectStore();
+}
+
+function updateFAAObjectStore()
+{
+    var transaction = db.transaction("faaWaypoints", "readwrite");
+
+/*
+    // report on the success of opening the transaction
+    transaction.oncomplete = function(event) {
+        status("Transaction completed: database modification finished.");
+    };
+
+    transaction.onerror = function(event) {
+        status("Transaction not opened due to error. Duplicate items not allowed.");
+    };
+*/
+
+    var faaWaypointOS = transaction.objectStore("faaWaypoints");
+
+    var faaRecordsLoaded = 0;
+    for (var i in faaWaypoints) {
+        faaWaypointOS.add(faaWaypoints);
+        faaRecordsLoaded++;
+    }
+
+    objectStoreRequest.onsuccess = function(event) {
+        status("Loaded " + faaRecordsLoaded + " FAA records");
+    };
+
+    faaWaypointOS.transaction.oncomplete = function(event) {
+        status("Loaded " + faaRecordsLoaded + " FAA records");
+    };
 }
 
 function createObjectStores()
