@@ -533,6 +533,8 @@ class Waypoint
     }
 }
 
+var LegModifier = new RegExp("(360|3[0-5][0-9]|[0-2][0-9]{2}|[0-9]{1,2])@([0-9]{1,3})|([1-9][0-9]{1,2})kts", "i");
+
 class Leg
 {
     constructor(fix, location)
@@ -549,8 +551,12 @@ class Leg
         this.distanceRemainingAfterThisLeg = 0;
         this.course = 0;
         this.estTAS = 0;
-        this.windDirection = 0;
-        this.windSpeed = 0;
+        if (Leg.tasOverride) {
+            this.estTAS = Leg.tasOverride;
+            Leg.tasOverride = undefined;
+        }
+        this.windDirection = Leg.defaultWindDirection;
+        this.windSpeed = Leg.defaultWindSpeed;
         this.heading = 0;
         this.estGS = 0;
         this.actGS = 0;
@@ -669,6 +675,19 @@ class Leg
         return this.fix;
     }
 
+    windToString()
+    {
+        if (!this.windSpeed)
+            return "";
+
+        return (this.windDirection ? this.windDirection : "360") + "@" + this.windSpeed;
+    }
+
+    estTASToString()
+    {
+        return this.estTAS + "kts";
+    }
+
     static editTAS(cell)
     {
         status("Trying to edit TAS for row " + cell.leg.index);
@@ -679,6 +698,71 @@ class Leg
     {
         status("Trying to edit wind for row " + cell.leg.index);
         showWindPopup(cell.leg);
+    }
+
+    static setDefaultWind(windDirection, windSpeed)
+    {
+        this.defaultWindDirection = windDirection;
+        this.defaultWindSpeed = windSpeed;
+    }
+
+    static setTASOverride(tas)
+    {
+        this.tasOverride = tas;
+    }
+
+    static resetModifiers()
+    {
+        this.setDefaultWind(0, 0);
+        this.setTASOverride(undefined);
+    }
+
+    static isLegModifier(fix)
+    {
+        return LegModifier.test(fix);
+    }
+
+    static processLegModifier(fix)
+    {
+        var match = fix.match(LegModifier);
+
+        if (match) {
+            if (match[1] && match[2]) {
+                var windDirection = parseInt(match[1].toString()) % 360;
+                var windSpeed = parseInt(match[2].toString());
+
+                Leg.setDefaultWind(windDirection, windSpeed);
+            } else if (match[3]) {
+                var tas = parseInt(match[3].toString());
+                Leg.setTASOverride(tas);
+            }
+
+            setTimeout(getNextWaypoint(), 0);
+        }
+    }
+
+    isSameWind(windDirection, windSpeed)
+    {
+        return this.windDirection == windDirection && this.windSpeed == windSpeed;
+    }
+
+    isDefaultWind()
+    {
+        return this.windSpeed && this.isSameWind(Leg.defaultWindDirection, Leg.defaultWindSpeed);
+    }
+
+    isSameWindAsPreviousLeg()
+    {
+        var previousLeg = previousLeg();
+
+        return previousLeg && this.isSameWind(previousLeg.windDirection, previousLeg.windSpeed);
+    }
+
+    isStandardTAS()
+    {
+        var engineConfig = EngineConfig.getConfig(this.engineConfig);
+
+        return (this.estTAS == engineConfig.trueAirspeed());
     }
 
     previousLeg()
@@ -693,6 +777,12 @@ class Leg
         if (this.index < Leg.allLegs.length - 1)
             return Leg.allLegs[this.index + 1];
         return undefined;
+    }
+
+    setWind(windDirection, windSpeed)
+    {
+        this.windDirection = windDirection;
+        this.windSpeed = windSpeed;
     }
 
     updateDistanceAndBearing(other)
@@ -988,6 +1078,7 @@ class Leg
             var leg = this.allLegs[0];
             leg.remove();
         }
+        Leg.resetModifiers();
         RallyLeg.reset();
     }
 
@@ -1003,10 +1094,26 @@ class Leg
     static currentRoute()
     {
         var result = "";
+        var lastWindDirection = 0;
+        var lastWindSpeed = 0;
+
         for (var i = 0; i < this.allLegs.length; i++) {
-            if (i)
+            var currentLeg = this.allLegs[i];
+
+            if (i) {
                 result = result + " ";
-            result = result + this.allLegs[i].toString();
+            }
+
+            if (!currentLeg.isSameWind(lastWindDirection, lastWindSpeed)) {
+                result = result + currentLeg.windToString() + " ";
+                lastWindDirection = currentLeg.windDirection;
+                lastWindSpeed = currentLeg.windSpeed;
+            }
+
+            if (!currentLeg.isStandardTAS())
+                result = result + currentLeg.estTASToString() + " ";
+
+            result = result + currentLeg.toString();
         }
 
         return result;
@@ -1083,6 +1190,10 @@ class Leg
 Leg.allLegs = [];
 Leg.currentLegIndex = 0;
 Leg.currentLeg = undefined;
+Leg.defaultWindDirection = 0;
+Leg.defaultWindSpeed = 0;
+Leg.tasOverride = undefined;
+
 Leg.cellCount = 22;
 // Top row: Waypoint | Lat  | Leg Dist | TAS | WindDir@WindSpd | Est GS | ETE |  ETR | Fuel Flow | Est Fuel | ECF
 Leg.cellIndexWaypoint = 0;
@@ -1686,7 +1797,9 @@ function getNextWaypoint()
         return;
     }
 
-    if (RallyLeg.isRallyLegWithoutFix(nextWaypoint))
+    if (RallyLeg.isLegModifier(nextWaypoint))
+        Leg.processLegModifier(nextWaypoint);
+    else if (RallyLeg.isRallyLegWithoutFix(nextWaypoint))
         getRallyWaypointWithoutFix(nextWaypoint);
     else {
         var fixName = RallyLeg.fixNeeded(nextWaypoint);
