@@ -1684,8 +1684,8 @@ var dbName = "RallyTrackerDB";
 function openDB()
 {
     var _indexedDB = window._indexedDB || window.indexedDB || window.webkitIndexedDB;
-//    var request = _indexedDB.open(dbName, 1);
-    var request = _indexedDB.deleteDatabase(dbName, 1);
+    var request = _indexedDB.open(dbName, 1);
+//    var request = _indexedDB.deleteDatabase(dbName, 1);
 
     request.onerror = function(event) {
         status("Could not open " + dbName + " IndexedDB");
