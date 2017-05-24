@@ -1612,6 +1612,16 @@ function startLocationUpdates()
         timeUpdateInterval = window.setInterval(function() { updateTimeAndPosition(undefined); }, 1000);
 }
 
+function installOnFocusHandler()
+{
+    window.onfocus = function() {
+        if (watchPositionID) {
+            navigator.geolocation.clearWatch(watchPositionID);
+            startLocationUpdates();
+        }
+    };
+}
+
 function showGeolocationError(error) {
     switch(error.code) {
     case error.PERMISSION_DENIED:
@@ -2056,7 +2066,7 @@ function startRunning()
         startTime = new Date();
         priorFuelUsed = fuelUsed = 0;
         legStartTime = startTime;
-        startLocationUpdates();
+//  &&&&        startLocationUpdates();
         state.setRunning();
         Leg.resetCurrentLeg();
         Leg.start(startTime);
@@ -2105,8 +2115,8 @@ function start()
     EngineConfig.appendConfig("Warm Taxi", 1000, "Rich", 1.85, 0);
     EngineConfig.appendConfig("Runup", 1800, "Rich", 5.79, 0);
     EngineConfig.appendConfig("Takeoff", 2700, "Rich", 26.09, 105);
-    EngineConfig.appendConfig("Climb", 2500, 25, 19.15, 125);
-    EngineConfig.appendConfig("Cruise", 2400, 20, 14.10, 142);
+    EngineConfig.appendConfig("Climb", 2500, 25, 21.07, 125);
+    EngineConfig.appendConfig("Cruise", 2400, 20, 14.12, 142);
     EngineConfig.appendConfig("Pattern", 2700, 15, 7.80, 95);
     EngineConfig.selectConfig(EngineConfig.ColdTaxi);
 
@@ -2122,5 +2132,5 @@ function start()
 */
 
     startLocationUpdates();
+    installOnFocusHandler();
 }
-                            
