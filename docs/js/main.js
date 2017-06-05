@@ -228,24 +228,31 @@ class GeoLocation
 
     latitudeString()
     {
-        var latitude = this.latitude.toFixed(4)
-        var latitudeSuffix = "&degN";
+        var latitude = this.latitude;
+        var latitudePrefix = "N";
         if (latitude < 0) {
-            latitudeSuffix = "&degS"
             latitude = -latitude;
+            latitudePrefix = "S"
         }
-        return latitude + latitudeSuffix;
+        var latitudeDegrees = Math.floor(latitude);
+        var latitudeMinutes = ((latitude - latitudeDegrees) * 60).toFixed(3);
+        var latitudeMinutesFiller = latitudeMinutes < 10 ? " " : "";
+        return latitudePrefix + latitudeDegrees + "&deg" + latitudeMinutesFiller + latitudeMinutes + "'";
     }
 
     longitudeString()
     {
-        var longitude = this.longitude.toFixed(4);
-        var longitudeSuffix = "&degE";
+        var longitude = this.longitude;
+        var longitudePrefix = "E";
         if (longitude < 0) {
-            longitudeSuffix = "&degW"
             longitude = -longitude;
+            longitudePrefix = "W"
         }
-        return longitude + longitudeSuffix;
+
+        var longitudeDegrees = Math.floor(longitude);
+        var longitudeMinutes = ((longitude - longitudeDegrees) * 60).toFixed(3);
+        var longitudeMinutesFiller = longitudeMinutes < 10 ? " " : "";
+        return longitudePrefix + longitudeDegrees + "&deg" + longitudeMinutesFiller + longitudeMinutes + "'";
     }
 
     distanceTo(otherLocation)
@@ -447,21 +454,11 @@ class LocationStatus
     update(now, position, requiredSpeed)
     {
         if (position) {
-            var latitude = position.coords.latitude.toFixed(4);
-            var latitudeSuffix = "&degN";
-            if (latitude < 0) {
-                latitudeSuffix = "&degS"
-                latitude = -latitude;
-            }
-            this.latitudeElement.innerHTML = latitude + latitudeSuffix;
+            var location = new GeoLocation(position.coords.latitude, position.coords.longitude);
 
-            var longitude = position.coords.longitude.toFixed(4);
-            var longitudeSuffix = "&degE";
-            if (longitude < 0) {
-                longitudeSuffix = "&degW"
-                longitude = -longitude;
-            }
-            this.longitudeElement.innerHTML = longitude + longitudeSuffix;
+            this.latitudeElement.innerHTML = location.latitudeString();
+            this.longitudeElement.innerHTML = location.longitudeString();
+
             var currentSpeed = position.coords.speed * this.speedConvert;
             this.speedElement.innerHTML = currentSpeed.toFixed(1);
             this.recentGroundSpeeds.unshift(currentSpeed);
@@ -1637,6 +1634,20 @@ function showGeolocationError(error) {
         status("An unknown error occurred.");
         break;
     }
+
+    // &&&& Testing code when GPS location is not available.
+    var position = {
+        coords: {
+            latitude: 39.8961,
+            longitude: -122.1621,
+            speed: 54,
+            heading: 359,
+            altitude: 512,
+            accuracy: 4
+        }
+    };
+    currentLocation = updateTimeAndPosition(position);
+    // &&&&
 }
 
 function updateTimeAndPosition(position) {

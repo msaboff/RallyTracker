@@ -17,41 +17,71 @@
   <thead>
     <tr>
       <th class="status-center">Lat.</th>
-      <th class="status-center">Long.</th>
       <th class="status-center">GS</th>
-      <th class="status-center">Avg GS</th>
       <th class="status-center">Req. GS</th>
-      <th class="status-center">Delta GS</th>
-      <th class="status-center">Heading</th>
-      <th class="status-center">Altitude</th>
-      <th class="status-center">Accuracy</th>
+      <th class="status-center">HDG</th>
+      <th class="status-center">Accur</th>
       <th class="status-center">GPS Time</th>
-      <th class="status-center">Time</th>
-      <th class="status-center">Dist to Wpt</th>
-      <th class="status-center">ETA Wpt</th>
+      <th class="status-center">Wpt Dis</th>
       <th class="status-center">ETA Gate</th>
-      <th class="status-center">Delta Time</th>
+      <th class="status-center">Est Time</th>
+      <th class="status-center">Sub. Fuel</th>
       <th class="status-center">Fuel Used</th>
+      <th class="status-center">Pumped</th>
+      <th class="status-center">Actual</th>
     </tr>
+  </thead>
   <thead>
     <tr>
       <td><div class="status-center" id="currentLatitude"></div></td>
-      <td><div class="status-center" id="currentLongitude"></div></td>
       <td><div class="status-center" id="currentSpeed"></div></td>
-      <td><div class="status-center" id="averageSpeed"></div></td>
       <td><div class="status-center" id="requiredGS"></div></td>
-      <td><div class="status-center" id="deltaGS"></div></td>
       <td><div class="status-center" id="currentHeading"></div></td>
-      <td><div class="status-center" id="currentAltitude"></div></td>
       <td><div class="status-center" id="currentAccuracy"></div></td>
       <td><div class="status-center" id="currentTimeStamp"></div></td>
-      <td><div class="status-center" id="currentTime"></div></td>
       <td><div class="status-center" id="distanceToWaypoint"></div></td>
-      <td><div class="status-center" id="timeToWaypoint"></div></td>		
       <td><div class="status-center" id="timeToGate"></div></td>
       <td><div class="status-center" id="deltaTime"></div></td>
+      <td><div class="status-center" id="SubFuel"></div></td>
       <td><div class="status-center" id="fuelUsed"></div></td>
+      <td><div class="status-center" id="fuelPumped"></div></td>
+      <td><div class="status-center" id="actualFuel"></div></td>
     </tr>
+  </thead>
+  <thead>
+    <tr>
+      <th class="status-center">Long.</th>
+      <th class="status-center">Avg GS</th>
+      <th class="status-center">Delta GS</th>
+      <th class="status-center">Alt</th>
+      <th class="status-center">Fill OAT</th>
+      <th class="status-center">Time</th>
+      <th class="status-center">Delta Time</th>
+      <th class="status-center">ETA Wpt</th>
+      <th class="status-center">Time Pts</th>
+      <th class="status-center">Start Fuel</th>
+      <th class="status-center">Vector</th>
+      <th class="status-center">Factor</th>
+      <th class="status-center">Fuel Pts</th>
+    </tr>
+  </thead>
+  <thead>
+    <tr>
+      <td><div class="status-center" id="currentLongitude"></div></td>
+      <td><div class="status-center" id="averageSpeed"></div></td>
+      <td><div class="status-center" id="deltaGS"></div></td>
+      <td><div class="status-center" id="currentAltitude"></div></td>
+      <td><div class="status-center" id="fillOAT"></div></td>
+      <td><div class="status-center" id="currentTime"></div></td>
+      <td><div class="status-center" id="deltaTime"></div></td>
+      <td><div class="status-center" id="timeToWaypoint"></div></td>
+      <td><div class="status-center" id="timePoints"></div></td>
+      <td><div class="status-center" id="startFuel"></div></td>
+      <td><div class="status-center" id="fuelVector"></div></td>
+      <td><div class="status-center" id="pumpFactor"></div></td>
+      <td><div class="status-center" id="fuelPoints"></div></td>
+    </tr>
+  </thead>
 </table>
 <table id="engineConfigs" style="width:100%">
   <tr class="config-row">
