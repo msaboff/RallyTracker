@@ -24,7 +24,7 @@
       <th class="status-center">GPS Time</th>
       <th class="status-center">Wpt Dis</th>
       <th class="status-center">ETA Gate</th>
-      <th class="status-center">Est Time</th>
+      <th class="status-center">Sub. Time</th>
       <th class="status-center">Sub. Fuel</th>
       <th class="status-center">Fuel Used</th>
       <th class="status-center">Pumped</th>
@@ -41,8 +41,8 @@
       <td><div class="status-center" id="currentTimeStamp"></div></td>
       <td><div class="status-center" id="distanceToWaypoint"></div></td>
       <td><div class="status-center" id="timeToGate"></div></td>
-      <td><div class="status-center" id="deltaTime"></div></td>
-      <td><div class="status-center" id="SubFuel"></div></td>
+      <td><div class="status-center" id="submittedTime"></div></td>
+      <td><div class="status-center" id="submittedFuel"></div></td>
       <td><div class="status-center" id="fuelUsed"></div></td>
       <td><div class="status-center" id="fuelPumped"></div></td>
       <td><div class="status-center" id="actualFuel"></div></td>
@@ -103,17 +103,18 @@
 <br>
 <table id="waypointHeader" style="width:100%">
   <tr>
-    <th style="width:19%">Waypoint</th>
-    <th style="width:9%">Lat.</th>
-    <th style="width:8%">Leg Dist</th>
-    <th style="width:8%">TAS</th>
-    <th style="width:8%">Wind</th>
-    <th style="width:8%">Est GS</th>
-    <th style="width:8%">ETE</th>
-    <th style="width:8%">ETR</th>
-    <th style="width:8%">FF</th>
-    <th style="width:8%">Est Fuel</th>
-    <th style="width:8%">ECF</th>
+    <th style="width:20%">Waypoint</th>
+    <th style="width:10%">Lat.</th>
+    <th style="width:7%">Leg Dist</th>
+    <th style="width:7%">TAS</th>
+    <th style="width:7%">Wind</th>
+    <th style="width:7%">Est GS</th>
+    <th style="width:7%">ETE</th>
+    <th style="width:7%">ETR</th>
+    <th style="width:7%">FF</th>
+    <th style="width:7%">Est Fuel</th>
+    <th style="width:7%">ECF</th>
+    <th style="width:7%">Comp</th>
   </tr>
   <tr>
     <th>Notes</th>
@@ -127,6 +128,7 @@
     <th>OAT</th>
     <th>Act Fuel</th>
     <th>ACF</th>
+    <th>Used</th>
   </tr>
 </table>
 <table id="waypoints" class="scroll" style="width:100%">
@@ -166,6 +168,12 @@
   At Speed: <input type="text" id="WindPopup_speed"><br>
   <button onclick="cancelWindPopup()">Cancel</button>
   <button onclick="submitWindPopup()">Submit</button>
+</div>
+<div id="oat-popup" class="white_content">
+  <h2>OAT</h2>
+  Temp &deg;F: <input type="text" id="OATPopup_oat">
+  <button onclick="cancelOATPopup()">Cancel</button>
+  <button onclick="submitOATPopup()">Submit</button>
 </div>
 <button onclick="showUserWaypointPopup()">User Waypoint</button>
 <button onclick="showGroundSpeedPopup()">Set Est GS</button>
