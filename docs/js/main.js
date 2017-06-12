@@ -38,6 +38,9 @@ var deltaTime = 0;
 var fuelUsed = 0;
 var TwoPI = Math.PI * 2;
 
+var editKeyCodes = [ 8, 37, 38, 39, 40, 45, 46]; // Backspace, Left Arrow, Up Arrow, Right Arrow, Down Arrow, Insert & Delete
+
+
 if (typeof(Number.prototype.toRadians) === "undefined") {
     Number.prototype.toRadians = function() {
         return this * Math.PI / 180;
@@ -456,11 +459,11 @@ class FlightStatus
         this.pumpFactorElement = document.getElementById("pumpFactor");
         this.fuelPoints = document.getElementById("fuelPoints");
 
-        this.fillOATElement.contentEditable = true;
-        this.fillOATElement.addEventListener('input', function() {
-            // &&&& Validate and set fill OAT
-            status('Changing fill OAT');
-        });
+        makeElementOATEditable(this.fillOATElement,
+                               function() { return fillOAT },
+                               function(newTemp) { if (flightStatus)
+                                                       flightStatus.updateFillOAT(newTemp);
+                                                 });
 
         this.submittedTimeElement.contentEditable = true;
         this.submittedTimeElement.addEventListener('input', function() {
@@ -550,9 +553,10 @@ class FlightStatus
         this.fuelUsedElement.innerHTML = fuelUsed.toFixed(3);
     }
 
-    updateFillOAT()
+    updateFillOAT(newFillOAT)
     {
-        
+        if (newFillOAT != undefined)
+            fillOAT = newFillOAT;
         this.fillOATElement.innerHTML = fillOAT + "&deg";
     }
 
@@ -651,17 +655,18 @@ class Leg
         this.cells[Leg.cellIndexWind].leg = this;
         this.cells[Leg.cellIndexWind].onclick = function() { Leg.editWind(this); };
 
-        // Edit OAT popup
         this.cells[Leg.cellIndexOAT].leg = this;
-/* &&&&
-        this.cells[Leg.cellIndexOAT].contentEditable = true;
-        this.cells[Leg.cellIndexOAT].addEventListener('input', function() {
-            status('Hey, somebody changed something in my text!');
-        });
-        this.cells[Leg.cellIndexOAT].onkeydown = function()
-                                                      { status("Keydown"); this.cells[Leg.cellIndexOAT].innerHTML = ""; };
-*/
-        this.cells[Leg.cellIndexOAT].onclick = function() { Leg.editOAT(this); };
+        this.updateOAT();
+
+        var thisLeg = this;
+        // Edit OAT popup
+        // &&&& this.cells[Leg.cellIndexOAT].onclick = function() { Leg.editOAT(this); };
+        makeElementOATEditable(this.cells[Leg.cellIndexOAT],
+                               function() { return thisLeg.oat; },
+                               function(newTemp) {
+                                                     thisLeg.updateOAT(newTemp);
+                                                     Leg.updateRows();
+                                                 });
     }
 
     fixName()
@@ -706,12 +711,18 @@ class Leg
         this.cells[Leg.cellIndexActGS].innerHTML = this.actGS.toFixed(1);
         this.cells[Leg.cellIndexATE].innerHTML = this.ate ? this.ate.toString() : "";
         this.cells[Leg.cellIndexATR].innerHTML = this.actTimeRemaining ? this.actTimeRemaining.toString() : "";
-        this.cells[Leg.cellIndexOAT].innerHTML = this.oat + "&deg";
         this.cells[Leg.cellIndexActFuel].innerHTML = this.actFuel.toFixed(2);
         this.cells[Leg.cellIndexACF].innerHTML = this.actCummulativeFuel.toFixed(2);
         this.cells[Leg.cellIndexFuelUsed].innerHTML = this.fuelUsed.toFixed(3);
 
         this.redrawNeeded = false;
+    }
+
+    updateOAT(newOAT)
+    {
+        if (newOAT != undefined)
+            this.oat = newOAT;
+        this.cells[Leg.cellIndexOAT].innerHTML = this.oat + "&deg";
     }
 
     select()
@@ -1981,6 +1992,40 @@ function putUserWaypoint(waypoint, callback)
     request.onerror = function(event) {
         callback(waypoint, undefined);
     }
+}
+
+function selectElementContents(el)
+{
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
+function makeElementOATEditable(element, getCurrentValue, setNewValue)
+{
+    element.contentEditable = true;
+
+    element.addEventListener('focus', function() {
+        element.innerHTML =  getCurrentValue();
+        selectElementContents(element);
+        status('OAT Focus');
+    });
+
+    element.addEventListener('keypress', function(event) {
+        status('OAT Key = ' +  event.keyCode);
+        if (event.keyCode == 13 || event.keyCode == 9) {
+            event.preventDefault();
+            var newTemp = parseInt(this.innerHTML);
+            if (newTemp > 0 && newTemp < 130) {
+                status('New temp = ' + newTemp);
+                setNewValue(newTemp);
+            }
+            element.blur();
+        } else if (!editKeyCodes.includes(event.keyCode) && (event.keyCode < 48 || event.keyCode > 57))
+            event.preventDefault();
+    });
 }
 
 function showPopup(popupId, show)
