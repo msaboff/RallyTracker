@@ -481,6 +481,7 @@ class FlightStatus
         });
 
         this.updateFillOAT();
+        this.updateStartFuel();
     }
 
     getFeetOrNull(meters)
@@ -563,9 +564,10 @@ class FlightStatus
         this.fillOATElement.innerHTML = fillOAT + "&deg";
     }
 
-    setStartFuel(fillAmount)
+    updateStartFuel(fillAmount)
     {
-        startFuel = fillAmount;
+        if (fillAmount != undefined)
+            startFuel = fillAmount;
         this.startFuelElement.innerHTML = startFuel.toFixed(1);
     }
 
