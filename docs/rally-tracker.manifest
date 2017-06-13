@@ -1,15 +1,15 @@
 CACHE MANIFEST
-# Mon June 5 11:21:00 PDT 2017
+# Mon June 12 22:27:00 PDT 2017
 
 CACHE:
-# /RallyTracker/index.html
-# /RallyTracker/js/main.js
+/RallyTracker/index.html
+/RallyTracker/js/main.js
 /RallyTracker/js/waypoints.json
 /RallyTracker/css/styles.css
 
 NETWORK:
 
-/RallyTracker/index.html
-/RallyTracker/js/main.js
+# /RallyTracker/index.html
+# /RallyTracker/js/main.js
 # /RallyTracker/js/waypoints.json
 # /RallyTracker/css/styles.css

@@ -463,6 +463,9 @@ class FlightStatus
                                function() { return fillOAT },
                                function(newTemp) { if (flightStatus)
                                                        flightStatus.updateFillOAT(newTemp);
+                                                   var firstLeg = Leg.getFirstLeg();
+                                                   if (firstLeg)
+                                                       firstLeg.updateOAT(newTemp);
                                                  });
 
         this.submittedTimeElement.contentEditable = true;
@@ -2015,10 +2018,12 @@ function makeElementOATEditable(element, getCurrentValue, setNewValue)
 
     element.addEventListener('keypress', function(event) {
         status('OAT Key = ' +  event.keyCode);
-        if (event.keyCode == 13 || event.keyCode == 9) {
+        if (event.keyCode == 13 || event.keyCode == 9 || event.keyCode == 27) {
             event.preventDefault();
             var newTemp = parseInt(this.innerHTML);
-            if (newTemp > 0 && newTemp < 130) {
+            if (event.keyCode == 27)
+                setNewValue();
+            else if (newTemp > 0 && newTemp < 130) {
                 status('New temp = ' + newTemp);
                 setNewValue(newTemp);
             }
