@@ -2279,13 +2279,13 @@ function init()
 function start()
 {
     // Bonanza configuration
-    EngineConfig.appendConfig("Cold Taxi", 1000, "Rich", 2.10, 0);
-    EngineConfig.appendConfig("Warm Taxi", 1000, "Rich", 1.85, 0);
-    EngineConfig.appendConfig("Runup", 1800, "Rich", 5.79, 0);
-    EngineConfig.appendConfig("Takeoff", 2700, "Rich", 26.09, 105);
-    EngineConfig.appendConfig("Climb", 2500, 25, 21.07, 125);
-    EngineConfig.appendConfig("Cruise", 2400, 20, 14.12, 142);
-    EngineConfig.appendConfig("Pattern", 2700, 15, 7.80, 95);
+    EngineConfig.appendConfig("Cold Taxi", 1000, "Rich", 2.45, 0); // Was 2.10
+    EngineConfig.appendConfig("Warm Taxi", 1000, "Rich", 2.45, 0); // Was 1.85
+    EngineConfig.appendConfig("Runup", 1800, "Rich", 6.75, 0); // Was 5.79
+    EngineConfig.appendConfig("Takeoff", 2700, "Rich", 26.57, 105); // Was 26.09
+    EngineConfig.appendConfig("Climb", 2500, 25, 21.85, 125); // Was 21.07
+    EngineConfig.appendConfig("Cruise", 2400, 20, 14.18, 142); // Was 14.12
+    EngineConfig.appendConfig("Pattern", 2700, 15, 11.13, 95); // Was 7.80
     EngineConfig.selectConfig(EngineConfig.ColdTaxi);
 
 /*  // Cessna configuration
