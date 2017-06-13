@@ -2013,24 +2013,22 @@ function makeElementOATEditable(element, getCurrentValue, setNewValue)
     element.addEventListener('focus', function() {
         element.innerHTML =  getCurrentValue();
         selectElementContents(element);
-        status('OAT Focus');
     });
 
-    element.addEventListener('keypress', function(event) {
-        status('OAT Key = ' +  event.keyCode);
-        if (event.keyCode == 13 || event.keyCode == 9 || event.keyCode == 27) {
-            event.preventDefault();
+    element.addEventListener('keydown', function(event) {
+        status("Key = " + event.keyCode + ", phase = " + event.eventPhase);
+        if (event.keyCode == 13 || event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192) {
+//            event.preventDefault();
+//            event.stopPropagation();
             var newTemp = parseInt(this.innerHTML);
-            if (event.keyCode == 27)
+            if (event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192)
                 setNewValue();
-            else if (newTemp > 0 && newTemp < 130) {
-                status('New temp = ' + newTemp);
+            else if (newTemp > 0 && newTemp < 130)
                 setNewValue(newTemp);
-            }
             element.blur();
         } else if (!editKeyCodes.includes(event.keyCode) && (event.keyCode < 48 || event.keyCode > 57))
             event.preventDefault();
-    });
+    }, { capture: true});
 }
 
 function showPopup(popupId, show)
