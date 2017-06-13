@@ -2016,10 +2016,7 @@ function makeElementOATEditable(element, getCurrentValue, setNewValue)
     });
 
     element.addEventListener('keydown', function(event) {
-        status("Key = " + event.keyCode + ", phase = " + event.eventPhase);
         if (event.keyCode == 13 || event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192) {
-//            event.preventDefault();
-//            event.stopPropagation();
             var newTemp = parseInt(this.innerHTML);
             if (event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192)
                 setNewValue();
