@@ -34,7 +34,6 @@ var distanceToWaypoint = 0;
 var etaWaypoint = 0;
 var etaGate = 0;
 var deltaTime = 0;
-//  &&&&  var priorFuelUsed = 0;
 var fuelUsed = 0;
 var TwoPI = Math.PI * 2;
 
@@ -463,9 +462,7 @@ class FlightStatus
                                function() { return fillOAT },
                                function(newTemp) { if (flightStatus)
                                                        flightStatus.updateFillOAT(newTemp);
-                                                   var firstLeg = Leg.getFirstLeg();
-                                                   if (firstLeg)
-                                                       firstLeg.updateOAT(newTemp);
+                                                   Leg.updateRows();
                                                  });
 
         this.submittedTimeElement.contentEditable = true;
@@ -664,8 +661,7 @@ class Leg
         this.updateOAT();
 
         var thisLeg = this;
-        // Edit OAT popup
-        // &&&& this.cells[Leg.cellIndexOAT].onclick = function() { Leg.editOAT(this); };
+
         makeElementOATEditable(this.cells[Leg.cellIndexOAT],
                                function() { return thisLeg.oat; },
                                function(newTemp) {
@@ -779,12 +775,6 @@ class Leg
         showWindPopup(cell.leg);
     }
 
-    static editOAT(cell)
-    {
-        status("Trying to edit OAT for row " + cell.leg.index);
-        showOATPopup(cell.leg);
-    }
-
     static setDefaultWind(windDirection, windSpeed)
     {
         this.defaultWindDirection = windDirection;
@@ -885,6 +875,19 @@ class Leg
         this.redrawNeeded = true;
     }
 
+    updateFuelCompensation()
+    {
+        var previousLeg = this.previousLeg();
+
+        var previousOAT = previousLeg ? previousLeg.oat : fillOAT;
+        this.compFuel = (previousOAT - this.oat) * fuelCompFarenheit * (startFuel - this.actCummulativeFuel);
+        var priorFuelUsed = previousLeg ? previousLeg.fuelUsed : 0;
+        this.fuelUsed = priorFuelUsed + this.actFuel + this.compFuel;
+        fuelUsed = this.fuelUsed;
+
+        this.redrawNeeded = true;
+    }
+
     updateActuals(date)
     {
         var previousLeg = this.previousLeg();
@@ -892,16 +895,13 @@ class Leg
         this.ate = Time.differenceBetween(date, this.startTime);
         this.actFuel = this.fuelFlow * this.ate.hours();
         this.actCummulativeFuel = (previousLeg ? previousLeg.actCummulativeFuel : 0) + this.actFuel;
-        var previousOAT = previousLeg ? previousLeg.oat : fillOAT;
-        this.compFuel = (previousOAT - this.oat) * fuelCompFarenheit * (startFuel - this.actCummulativeFuel);
-        var priorFuelUsed = previousLeg ? previousLeg.fuelUsed : 0;
 
         var distanceCovered = this.legDistance - this.distance;
         this.actGS = (this.ate.seconds() < 10 || distanceCovered < 2) ? currentAvgGS : (distanceCovered / this.ate.hours());
         var estSecondsRemaining = this.actGS ? Math.round(this.distance * 3600 / this.actGS) : 0;
         this.actTimeRemaining = new Time(estSecondsRemaining);
-        this.fuelUsed = priorFuelUsed + this.actFuel + this.compFuel;
-        fuelUsed = this.fuelUsed;
+
+        this.updateFuelCompensation();
 
         this.redrawNeeded = true;
     }
@@ -987,6 +987,7 @@ class Leg
         else {
             this.updateDistanceAndBearing(previousLeg.location);
             this.updateForWind();
+            this.updateFuelCompensation();
             this.legDistance = this.distance;
             var nextLeg = this.nextLeg();
             var previousLegType = previousLeg.type;
@@ -1223,6 +1224,10 @@ class Leg
         if (this.allLegs.length > 1) {
             if (this.currentLeg)
                 this.currentLeg.deselect();
+
+            Leg.getFirstLeg().updateFuelCompensation();
+            Leg.getFirstLeg().redraw();
+
             this.currentLegIndex = 1;
             var currLeg = this.currentLeg = this.allLegs[this.currentLegIndex];
             var startTiming = this.allLegs[0].startFlightTiming || currLeg.startFlightTiming;
@@ -1245,8 +1250,6 @@ class Leg
             var currLeg = this.currentLeg;
             currLeg.endTime = markTime;
             currLeg.updateActuals(currLeg.endTime);
-//  &&&&            priorFuelUsed = priorFuelUsed + currLeg.actFuel;
-//  &&&&            fuelUsed = priorFuelUsed;
             if (state.isTiming() && (currLeg.stopFlightTiming || currLeg.index == this.allLegs.length - 1)) {
                 deltaTime = Time.differenceBetween(etaGate, markTime);
                 state.clearTiming();
@@ -2197,44 +2200,11 @@ function submitWindPopup()
     cancelWindPopup();
 }
 
-function showOATPopup(leg)
-{
-    legEditing = leg;
-    var oatElem = document.getElementById('OATPopup_oat');
-    oatElem.value = leg.oat;
-    showPopup('oat-popup', true);
-}
-
-function cancelOATPopup()
-{
-    showPopup('oat-popup', false);
-}
-
-function submitOATPopup()
-{
-    var oatChanged = false;
-    var oat = document.getElementById('OATPopup_oat').value;
-    if (oat) {
-        oat = parseInt(oat);
-        legEditing.oat = oat;
-        oatChanged = true;
-    }
-
-    if (oatChanged) {
-        legEditing.propagateWind();
-        Leg.updateRows();
-    }
-
-    cancelOATPopup();
-}
-
 function startRunning()
 {
     if (Leg.haveRoute() && !state.isRunning()) {
         startTime = new Date();
-//  &&&&        priorFuelUsed = fuelUsed = 0;
         legStartTime = startTime;
-//  &&&&        startLocationUpdates();
         state.setRunning();
         Leg.resetCurrentLeg();
         Leg.start(startTime);
