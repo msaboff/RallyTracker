@@ -987,7 +987,6 @@ class Leg
         else {
             this.updateDistanceAndBearing(previousLeg.location);
             this.updateForWind();
-// &&&&            this.updateFuelCompensation();
             this.legDistance = this.distance;
             var nextLeg = this.nextLeg();
             var previousLegType = previousLeg.type;
