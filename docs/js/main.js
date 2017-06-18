@@ -462,7 +462,7 @@ class FlightStatus
                                function() { return fillOAT },
                                function(newTemp) { if (flightStatus)
                                                        flightStatus.updateFillOAT(newTemp);
-                                                   Leg.updateRows();
+                                                   Leg.updateAllFuelCompensation();
                                                  });
 
         this.submittedTimeElement.contentEditable = true;
@@ -666,7 +666,7 @@ class Leg
                                function() { return thisLeg.oat; },
                                function(newTemp) {
                                                      thisLeg.updateOAT(newTemp);
-                                                     Leg.updateRows();
+                                                     Leg.updateAllFuelCompensation();
                                                  });
     }
 
@@ -987,7 +987,7 @@ class Leg
         else {
             this.updateDistanceAndBearing(previousLeg.location);
             this.updateForWind();
-            this.updateFuelCompensation();
+// &&&&            this.updateFuelCompensation();
             this.legDistance = this.distance;
             var nextLeg = this.nextLeg();
             var previousLegType = previousLeg.type;
@@ -1153,6 +1153,15 @@ class Leg
 
         for (var i = this.allLegs.length - 1; i >= 0; i--)
             this.allLegs[i].updateBackward();
+
+        for (var i = 0; i < this.allLegs.length; i++)
+            this.allLegs[i].redraw();
+    }
+
+    static updateAllFuelCompensation()
+    {
+        for (var i = 0; i < this.allLegs.length; i++)
+            this.allLegs[i].updateFuelCompensation();
 
         for (var i = 0; i < this.allLegs.length; i++)
             this.allLegs[i].redraw();
