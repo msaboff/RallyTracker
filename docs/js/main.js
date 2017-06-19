@@ -52,6 +52,87 @@ if (typeof(Number.prototype.toDegrees) === "undefined") {
     }
 }
 
+
+var LatRE = new RegExp("^([NS\\-])?(90|[0-8]?\\d)(?:( [0-5]?\\d\\.\\d{0,3})'?|(\\.\\d{0,6})|( ([0-5]?\\d)\" ?([0-5]?\\d)'?))?", "i");
+
+function decimalLatitudeFromString(latitudeString)
+{
+    if (typeof latitudeString != "string")
+        return 0;
+
+    var match = latitudeString.match(LatRE);
+
+    if (!match)
+        return 0;
+
+    var result = 0;
+    var sign = 1;
+
+    if (match[1] && (match[1].toUpperCase() == "S" || match[1] == "-"))
+        sign = -1;
+
+    result = Number(match[2]);
+
+    if (result != 90) {
+        if (match[3]) {
+            // e.g. N37 42.874
+            var minutes = Number(match[3]);
+            result = result + (minutes / 60);
+        } else if (match[4]) {
+            // e.g. N37.30697
+            var decimalDegrees = Number(match[4]);
+            result = result + decimalDegrees;
+        } else if (match[5]) {
+            // e.g. N37 18" 27'
+            var degrees = Number(match[6]);
+            var minutes = Number(match[7]);
+            result = result + (degrees + minutes / 60) / 60;
+        }
+    }
+
+    return result * sign;
+}
+
+var LongRE = new RegExp("^([EW\\-]?)(180|(?:1[0-7]|\\d)?\\d)(?:( [0-5]?\\d\\.\\d{0,3})|(\\.\\d{0,6})|( ([0-5]?\\d)\" ?([0-5]?\\d)'?)?)", "i");
+
+function decimalLongitudeFromString(longitudeString)
+{
+    if (typeof longitudeString != "string")
+        return 0;
+
+    var match = longitudeString.match(LongRE);
+
+    if (!match)
+        return 0;
+
+    var result = 0;
+    var sign = 1;
+
+    if (match[1] && (match[1].toUpperCase() == "W" || match[1] == "-"))
+        sign = -1;
+
+    result = Number(match[2]);
+
+    if (result != 180) {
+        if (match[3]) {
+            // e.g. W121 53.254
+            var minutes = Number(match[3]);
+            result = result + (minutes / 60);
+        } else if (match[4]) {
+            // e.g. W121.8876
+            var decimalDegrees = Number(match[4]);
+            result = result + decimalDegrees;
+        } else if (match[5]) {
+            // e.g. W121 53" 15'
+            var degrees = Number(match[6]);
+            var minutes = Number(match[7]);
+            result = result + (degrees + minutes / 60) / 60;
+        }
+    }
+
+    return result * sign;
+}
+
 class State
 {
     constructor()
@@ -2067,8 +2148,8 @@ function createUserWaypoint()
     var name = document.getElementById('UserWaypointPopup_name').value;
     var type = "User";
     var description = document.getElementById('UserWaypointPopup_description').value;
-    var latitude = Number(document.getElementById('UserWaypointPopup_latitude').value);
-    var longitude = Number(document.getElementById('UserWaypointPopup_longitude').value);
+    var latitude = decimalLatitudeFromString(document.getElementById('UserWaypointPopup_latitude').value);
+    var longitude = decimalLongitudeFromString(document.getElementById('UserWaypointPopup_longitude').value);
     var waypoint = new Waypoint(name, type, description, latitude, longitude);
     putUserWaypoint(waypoint, createUserWaypointCallback);
 }
