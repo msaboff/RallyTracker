@@ -11,9 +11,9 @@
 <script src="js/waypoints.json"></script>
 <script src="js/main.js"></script>
 </head>
-
 <body onload="init()">
-<table id="statusTable" style="width:100%">
+<header>
+<table id="statusTable">
   <thead>
     <tr>
       <th class="status-center">Lat.</th>
@@ -131,9 +131,24 @@
     <th>Used</th>
   </tr>
 </table>
-<table id="waypoints" class="scroll" style="width:100%">
-</table>
+</header>
+  <section>
+  <div class="scrolling">
+    <table id="waypoints" class="scroll" style="width:100%">
+    </table>
+  </div>
+  </section>
 <br>
+<footer>
+<button onclick="showUserWaypointPopup()">User Waypoint</button>
+<button onclick="showGroundSpeedPopup()">Set Est GS</button>
+<button onclick="showRoutePopup()">Route</button>
+<button onclick="startRunning()">Start</button>
+<button onclick="markLeg()">Mark</button>
+<br>
+<div id="fade" class="black_overlay"></div>
+<div id="status"></div>
+</footer>
 <div id="user-waypoint-popup" class="white_content">
   <h2>User Waypoint</h2>
   Name: <input type="text" id="UserWaypointPopup_name"><br>
@@ -169,13 +184,5 @@
   <button onclick="cancelWindPopup()">Cancel</button>
   <button onclick="submitWindPopup()">Submit</button>
 </div>
-<button onclick="showUserWaypointPopup()">User Waypoint</button>
-<button onclick="showGroundSpeedPopup()">Set Est GS</button>
-<button onclick="showRoutePopup()">Route</button>
-<button onclick="startRunning()">Start</button>
-<button onclick="markLeg()">Mark</button>
-<br>
-<div id="fade" class="black_overlay"></div>
-<div id="status"></div>
 </body>
 </html>
