@@ -800,6 +800,11 @@ class Leg
         this.redrawNeeded = false;
     }
 
+    scrollToTop()
+    {
+        this.cells[Leg.cellIndexWaypoint].scrollIntoView();
+    }
+
     updateOAT(newOAT)
     {
         if (newOAT != undefined)
@@ -2298,6 +2303,7 @@ function startRunning()
         Leg.resetCurrentLeg();
         Leg.start(startTime);
         var currLeg = Leg.getCurrentLeg();
+        currLeg.scrollToTop();
         currLeg.startTime = legStartTime;
         etaWaypoint = currLeg.ete.addDate(startTime);
     }
@@ -2307,7 +2313,9 @@ function markLeg()
 {
     if (state.isRunning()) {
         var now = new Date();
+        var topLegToView = Leg.getCurrentLeg();
         Leg.markCurrentLeg(false, now)
+        topLegToView.scrollToTop();
         if (state.isRunning()) {
             var leg = Leg.getCurrentLeg();
             etaWaypoint = leg.ete.addDate(now);
