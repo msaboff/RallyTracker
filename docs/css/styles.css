@@ -1,18 +1,24 @@
 #statusTable {
     border: 1px solid black;
     border-spacing: 0;
+    font-family: BanglaSangamMN;
+    font-size: 85%;
     width: 100%;
 }
 
 #engineConfigs {
     border: 1px solid black;
     border-spacing: 0;
+    font-family: BanglaSangamMN;
+    font-size: 85%;
 }
 
 #waypointHeader {
     border: 1px solid black;
     border-bottom: hidden;
     border-spacing: 0;
+    font-family: BanglaSangamMN;
+    font-size: 85%;
 }
 
 table, th, td {
@@ -56,6 +62,8 @@ table.scroll {
     width: 100%; /* 140px * 5 column + 16px scrollbar width */
     border-top: hidden;
     border-spacing: 0;
+    font-family: BanglaSangamMN;
+    font-size: 85%;
 /*    border: 2px solid black; */
 }
 

@@ -22,13 +22,14 @@
       <th class="status-center">HDG</th>
       <th class="status-center">Accur</th>
       <th class="status-center">GPS Time</th>
-      <th class="status-center">Wpt Dis</th>
+      <th class="status-center">T/O Time</th>
       <th class="status-center">ETA Gate</th>
-      <th class="status-center">Sub. Time</th>
-      <th class="status-center">Sub. Fuel</th>
-      <th class="status-center">Fuel Used</th>
+      <th class="status-center">Est. Time</th>
+      <th class="status-center">Est. Fuel</th>
+      <th class="status-center">Start Fuel</th>
+      <th class="status-center">Meter</th>
       <th class="status-center">Pumped</th>
-      <th class="status-center">Actual</th>
+      <th class="status-center">Total</th>
     </tr>
   </thead>
   <thead>
@@ -39,29 +40,31 @@
       <td><div class="status-center" id="currentHeading"></div></td>
       <td><div class="status-center" id="currentAccuracy"></div></td>
       <td><div class="status-center" id="currentTimeStamp"></div></td>
-      <td><div class="status-center" id="distanceToWaypoint"></div></td>
+      <td><div class="status-center" id="takeoffTime"></div></td>
       <td><div class="status-center" id="timeToGate"></div></td>
       <td><div class="status-center" id="submittedTime"></div></td>
       <td><div class="status-center" id="submittedFuel"></div></td>
-      <td><div class="status-center" id="fuelUsed"></div></td>
+      <td><div class="status-center" id="startFuel"></div></td>
+      <td><div class="status-center" id="fuelMeter"></div></td>
       <td><div class="status-center" id="fuelPumped"></div></td>
-      <td><div class="status-center" id="actualFuel"></div></td>
+      <td><div class="status-center" id="totalFuel"></div></td>
     </tr>
   </thead>
   <thead>
     <tr>
       <th class="status-center">Long.</th>
       <th class="status-center">Avg GS</th>
-      <th class="status-center">Delta GS</th>
+      <th class="status-center">&Delta; GS</th>
       <th class="status-center">Alt</th>
-      <th class="status-center">Fill Temp</th>
+      <th class="status-center">Wpt Dis</th>
       <th class="status-center">Time</th>
-      <th class="status-center">Delta Time</th>
+      <th class="status-center">&Delta; Time</th>
       <th class="status-center">ETA Wpt</th>
       <th class="status-center">Time Pts</th>
-      <th class="status-center">Start Fuel</th>
-      <th class="status-center">Vector</th>
+      <th class="status-center">Fill Temp</th>
+      <th class="status-center">Fuel Used</th>
       <th class="status-center">Factor</th>
+      <th class="status-center">Vector</th>
       <th class="status-center">Fuel Pts</th>
     </tr>
   </thead>
@@ -71,14 +74,15 @@
       <td><div class="status-center" id="averageSpeed"></div></td>
       <td><div class="status-center" id="deltaGS"></div></td>
       <td><div class="status-center" id="currentAltitude"></div></td>
-      <td><div class="status-center" id="fillOAT"></div></td>
+      <td><div class="status-center" id="distanceToWaypoint"></div></td>
       <td><div class="status-center" id="currentTime"></div></td>
       <td><div class="status-center" id="deltaTime"></div></td>
       <td><div class="status-center" id="timeToWaypoint"></div></td>
       <td><div class="status-center" id="timePoints"></div></td>
-      <td><div class="status-center" id="startFuel"></div></td>
-      <td><div class="status-center" id="fuelVector"></div></td>
-      <td><div class="status-center" id="pumpFactor"></div></td>
+      <td><div class="status-center" id="fillOAT"></div></td>
+      <td><div class="status-center" id="fuelUsed"></div></td>
+      <td><div class="status-center" id="pumpFactor">1.000</div></td>
+      <td><div class="status-center" id="fuelVector">0.0</div></td>
       <td><div class="status-center" id="fuelPoints"></div></td>
     </tr>
   </thead>
