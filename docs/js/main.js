@@ -615,6 +615,11 @@ class FlightStatus
         return feet;
     }
 
+    setSubmittedTime(time)
+    {
+        this.submittedTimeElement.innerHTML = time.toString();
+    }
+
     setTakeoffTime(time)
     {
         this._takeoffTime = time;
@@ -863,6 +868,7 @@ class FlightStatus
                 fuelPoints = Math.abs(totalFuel - submittedFuel) / submittedFuel * 3000;
 
             this.updateFuelMeter(fuelMeter, true);
+            this.updatePumpFactor(1.0, true);
             this.updateFuelPumped(fuelPumped, true);
             this.updateFuelVector(fuelVector, true);
             this.updateTotalFuel(totalFuel, true);
@@ -1452,12 +1458,12 @@ class Leg
             if (thisLeg.startFlightTiming) {
                 if (haveStartTiming)
                     status("Have duplicate Start timing leg in row " + thisLeg.toString());
-                haveStartTiming = true
+                haveStartTiming = true;
             }
             if (thisLeg.stopFlightTiming) {
                 if (haveStopTiming)
                     status("Have duplicate Timing leg in row " + thisLeg.toString());
-                haveStopTiming = true
+                haveStopTiming = true;
             }
         }
 
@@ -1471,6 +1477,14 @@ class Leg
 
         for (var i = this.allLegs.length - 1; i >= 0; i--)
             this.allLegs[i].updateBackward();
+
+        for (var i = 0; i < this.allLegs.length; i++) {
+            var thisLeg = this.allLegs[i];
+            if (thisLeg.startFlightTiming) {
+                if (flightStatus)
+                    flightStatus.setSubmittedTime(thisLeg.estTimeRemaining);
+            }
+        }
 
         for (var i = 0; i < this.allLegs.length; i++)
             this.allLegs[i].redraw();
@@ -2570,12 +2584,14 @@ function startRunning()
 {
     if (Leg.haveRoute() && !state.isRunning()) {
         startTime = new Date();
+        if (flightStatus)
+            flightStatus.resetActualFuelForFlight();
         legStartTime = startTime;
         state.setRunning();
         Leg.resetCurrentLeg();
         Leg.start(startTime);
+        Leg.getFirstLeg().scrollToTop();
         var currLeg = Leg.getCurrentLeg();
-        currLeg.scrollToTop();
         currLeg.startTime = legStartTime;
         etaWaypoint = currLeg.ete.addDate(startTime);
     }
