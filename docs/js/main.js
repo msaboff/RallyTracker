@@ -27,14 +27,11 @@ var timeUpdateInterval = 0;
 var startTime = null;
 var lastUpdate = new Date();
 var legStartTime = null;
-var fillOAT = 72;
-var startFuel = 80;
 var currentAvgGS = 0;
 var distanceToWaypoint = 0;
 var etaWaypoint = 0;
 var etaGate = 0;
 var deltaTime = 0;
-var fuelUsed = 0;
 var TwoPI = Math.PI * 2;
 
 var editKeyCodes = [ 8, 37, 38, 39, 40, 45, 46]; // Backspace, Left Arrow, Up Arrow, Right Arrow, Down Arrow, Insert & Delete
@@ -509,6 +506,21 @@ class FlightStatus
         }
         this.heightConvert = metersToFeet;
         this.recentGroundSpeeds = [];
+
+        this._takeoffTime = undefined;
+        this._submittedTime = undefined;
+        this._submittedFuel = undefined;
+        this._startFuel = 80;
+        this._fillOAT = 72;
+        this._fuelUsed = 0;
+        this._fuelMeter = undefined;
+        this._pumpFactor = 1.0;
+        this.fuelPumped = undefined;
+        this._fuelVector = 0.0;
+        this._totalFuel = undefined;
+        this.timePoints = 0;
+        this._fuelPoints = undefined;
+
         // First row
         this.latitudeElement = document.getElementById("currentLatitude");
         this.speedElement = document.getElementById("currentSpeed");
@@ -516,35 +528,71 @@ class FlightStatus
         this.headingElement = document.getElementById("currentHeading");
         this.accuracyElement = document.getElementById("currentAccuracy");
         this.timestampElement = document.getElementById("currentTimeStamp");
-        this.distanceToWaypointElement = document.getElementById("distanceToWaypoint");
+        this.takeoffTimeElement = document.getElementById("takeoffTime");
         this.timeToGateElement = document.getElementById("timeToGate");
         this.submittedTimeElement = document.getElementById("submittedTime");
         this.submittedFuelElement = document.getElementById("submittedFuel");
-        this.fuelUsedElement = document.getElementById("fuelUsed");
+        this.startFuelElement = document.getElementById("startFuel");
+        this.fuelMeterElement = document.getElementById("fuelMeter");
         this.fuelPumpedElement = document.getElementById("fuelPumped");
-        this.actualFuel = document.getElementById("actualFuel");
+        this.totalFuelElement = document.getElementById("totalFuel");
 
         // Second row
         this.longitudeElement = document.getElementById("currentLongitude");
         this.averageSpeedElement = document.getElementById("averageSpeed");
         this.deltaGSElement = document.getElementById("deltaGS");
         this.altitudeElement = document.getElementById("currentAltitude");
-        this.fillOATElement = document.getElementById("fillOAT");
+        this.distanceToWaypointElement = document.getElementById("distanceToWaypoint");
         this.currentTimeElement = document.getElementById("currentTime");
         this.deltaTimeElement = document.getElementById("deltaTime");
         this.timeToWaypointElement = document.getElementById("timeToWaypoint");
         this.timePointsElement = document.getElementById("timePoints");
-        this.startFuelElement = document.getElementById("startFuel");
-        this.fuelVectorElement = document.getElementById("fuelVector");
+        this.fillOATElement = document.getElementById("fillOAT");
+        this.fuelUsedElement = document.getElementById("fuelUsed");
         this.pumpFactorElement = document.getElementById("pumpFactor");
-        this.fuelPoints = document.getElementById("fuelPoints");
+        this.fuelVectorElement = document.getElementById("fuelVector");
+        this.fuelPointsElement = document.getElementById("fuelPoints");
 
-        makeElementOATEditable(this.fillOATElement,
-                               function() { return fillOAT },
-                               function(newTemp) { if (flightStatus)
-                                                       flightStatus.updateFillOAT(newTemp);
-                                                   Leg.updateAllFuelCompensation();
-                                                 });
+        makeOATElementEditable(this.fillOATElement,
+                               function() { return flightStatus.fillOAT() },
+                               function(newTemp) {
+                                   flightStatus.updateFillOAT(newTemp);
+                                   Leg.updateAllFuelCompensation();
+                               });
+
+        makeFuelElementEditable(this.submittedFuelElement,
+                                function() { return flightStatus.submittedFuel(); },
+                                function(newFuel) {
+                                    flightStatus.updateSubmittedFuel(newFuel);
+                                });
+
+        makeFuelElementEditable(this.startFuelElement,
+                                function() { return flightStatus.startFuel(); },
+                                function(newFuel) {
+                                    flightStatus.updateStartFuel(newFuel);
+                                    Leg.updateAllFuelCompensation();
+                                });
+
+        makeFuelElementEditable(this.fuelMeterElement,
+                                function() { return flightStatus.fuelMeter(); },
+                                function(newFuel) {
+                                    if (!state.isRunning())
+                                        flightStatus.updateFuelMeter(newFuel);
+                                });
+
+        makeFuelElementEditable(this.fuelVectorElement,
+                                function() { return flightStatus.fuelVector(); },
+                                function(newFuel) {
+                                    if (!state.isRunning())
+                                        flightStatus.updateFuelVector(newFuel);
+                                });
+
+        makePumpFactorElementEditable(this.pumpFactorElement,
+                                      function() { return flightStatus.pumpFactor(); },
+                                      function(newFactor) {
+                                          if (!state.isRunning())
+                                              flightStatus.updatePumpFactor(newFactor);
+                                      });
 
         this.submittedTimeElement.contentEditable = true;
         this.submittedTimeElement.addEventListener('input', function() {
@@ -552,14 +600,9 @@ class FlightStatus
             status('Changing submitted time');
         });
 
-        this.submittedFuelElement.contentEditable = true;
-        this.submittedFuelElement.addEventListener('input', function() {
-            // &&&& Validate and set submitted fuel
-            status('Changing submitted fuel');
-        });
-
         this.updateFillOAT();
         this.updateStartFuel();
+        this.updateActualFuel();
     }
 
     getFeetOrNull(meters)
@@ -570,6 +613,175 @@ class FlightStatus
             feet = (meters * metersToFeet).toFixed(0) + "'";
 
         return feet;
+    }
+
+    setTakeoffTime(time)
+    {
+        this._takeoffTime = time;
+        this.takeoffTimeElement.innerHTML = this._takeoffTime.toTimeString().split(" ")[0];
+    }
+
+    resetActualFuelForFlight()
+    {
+        this._fuelUsed = 0;
+        this._fuelMeter = undefined;
+        this._pumpFactor = 1.0;
+        this.fuelPumped = undefined;
+        this._fuelVector = 0.0;
+        this._totalFuel = undefined;
+        this._fuelPoints = undefined;
+    }
+
+    fillOAT()
+    {
+        return this._fillOAT;
+    }
+
+    updateFillOAT(newFillOAT)
+    {
+        if (newFillOAT != undefined)
+            this._fillOAT = newFillOAT;
+        this.fillOATElement.innerHTML = this._fillOAT + "&deg";
+    }
+
+    updateFuelUsed(fuelAmount)
+    {
+        this._fuelUsed = fuelAmount;
+        this.updateActualFuel();
+    }
+
+    submittedFuel()
+    {
+        return (this._submittedFuel == undefined) ? 0 : this._submittedFuel;
+    }
+
+    updateSubmittedFuel(fuelAmount)
+    {
+        if (fuelAmount != undefined)
+            this._submittedFuel = fuelAmount;
+        this.submittedFuelElement.innerHTML = this._submittedFuel.toFixed(2);
+        this.updateActualFuel();
+    }
+
+    fuelMeter()
+    {
+        return (this._fuelMeter == undefined) ? 0 : this._fuelMeter;
+    }
+
+    updateFuelMeter(fuelAmount, isEstimate)
+    {
+        if (isEstimate)
+            this.fuelMeterElement.style.color = "mediumBlue";
+        else {
+            this.fuelMeterElement.style.color = "black";
+            if (fuelAmount != undefined) {
+                this._fuelMeter = fuelAmount;
+                this.updateActualFuel();
+            } else
+                fuelAmount = this._fuelMeter;
+        }
+
+        this.fuelMeterElement.innerHTML = (fuelAmount == undefined) ? "" : fuelAmount.toFixed(2);
+    }
+
+    startFuel()
+    {
+        return this._startFuel;
+    }
+
+    updateStartFuel(fillAmount)
+    {
+        if (fillAmount != undefined)
+            this._startFuel = fillAmount;
+        this.startFuelElement.innerHTML = this._startFuel.toFixed(2);
+    }
+
+    pumpFactor()
+    {
+        return (this._pumpFactor == undefined) ? 1.0 : this._pumpFactor;
+    }
+
+    updatePumpFactor(newFactor, isEstimate)
+    {
+        if (isEstimate)
+            this.pumpFactorElement.style.color = "mediumBlue";
+        else {
+            this.pumpFactorElement.style.color = "black";
+            if (newFactor != undefined) {
+                this._pumpFactor = newFactor;
+                this.updateActualFuel();
+            } else
+                newFactor = this._pumpFactor;
+        }
+
+        this.pumpFactorElement.innerHTML = (newFactor == undefined) ? "" : newFactor.toFixed(4);
+    }
+
+    updateFuelPumped(fuelAmount, isEstimate)
+    {
+        if (isEstimate)
+            this.fuelPumpedElement.style.color = "mediumBlue";
+        else {
+            this.fuelPumpedElement.style.color = "black";
+            if (fuelAmount != undefined)
+                this._fuelPumped = fuelAmount;
+            else
+                fuelAmount = this._fuelPumped;
+        }
+
+        this.fuelPumpedElement.innerHTML = (fuelAmount == undefined) ? "" : fuelAmount.toFixed(2);
+    }
+
+    fuelVector()
+    {
+        return (this._fuelVector == undefined) ? 0 : this._fuelVector;
+    }
+
+    updateFuelVector(fuelAmount, isEstimate)
+    {
+        if (isEstimate)
+            this.fuelVectorElement.style.color = "mediumBlue";
+        else {
+            this.fuelVectorElement.style.color = "black";
+            if (fuelAmount != undefined) {
+                this._fuelVector = fuelAmount;
+                this.updateActualFuel();
+            } else
+                fuelAmount = this._fuelVector;
+        }
+
+        this.fuelVectorElement.innerHTML = (fuelAmount == undefined) ? "" : fuelAmount.toFixed(2);
+    }
+
+    updateTotalFuel(fuelAmount, isEstimate)
+    {
+        if (isEstimate)
+            this.totalFuelElement.style.color = "mediumBlue";
+        else {
+            this.totalFuelElement.style.color = "black";
+            if (fuelAmount != undefined)
+                this._totalFuel = fuelAmount;
+            else
+                fuelAmount = this._totalFuel;
+        }
+
+        this.totalFuelElement.innerHTML = (fuelAmount == undefined) ? "" : fuelAmount.toFixed(2);
+    }
+
+
+    updateFuelPoints(points, isEstimate)
+    {
+        if (isEstimate)
+            this.fuelPointsElement.style.color = "mediumBlue";
+        else {
+            this.fuelPointsElement.style.color = "black";
+            if (points != undefined)
+                this._fuelPoints = points;
+            else
+                points = this._fuelPoints;
+        }
+
+        this.fuelPointsElement.innerHTML = (points == undefined) ? "" : points.toFixed(0);
     }
 
     update(now, position, requiredSpeed)
@@ -632,21 +844,40 @@ class FlightStatus
             this.timePointsElement.innerHTML = Math.abs(deltaTime.seconds()) * 3;
         }
         this.deltaTimeElement.innerHTML = deltaTime ? deltaTime.toString() : "";
-        this.fuelUsedElement.innerHTML = fuelUsed.toFixed(3);
+        this.fuelUsedElement.innerHTML = this._fuelUsed.toFixed(3);
     }
 
-    updateFillOAT(newFillOAT)
+    updateActualFuel()
     {
-        if (newFillOAT != undefined)
-            fillOAT = newFillOAT;
-        this.fillOATElement.innerHTML = fillOAT + "&deg";
-    }
+        if (state.isRunning()) {
+            // In flight estimates
+            var fuelMeter = this._fuelUsed;
+            var fuelPumped = fuelMeter * this.pumpFactor();
+            var fuelVector = 0.0;
+            var submittedFuel = this.submittedFuel();
+            if (fuelPumped > submittedFuel)
+                fuelVector = fuelPumped - this.submittedFuel();
+            var totalFuel = fuelPumped - fuelVector;
+            var fuelPoints = 0;
+            if (submittedFuel > 0)
+                fuelPoints = Math.abs(totalFuel - submittedFuel) / submittedFuel * 3000;
 
-    updateStartFuel(fillAmount)
-    {
-        if (fillAmount != undefined)
-            startFuel = fillAmount;
-        this.startFuelElement.innerHTML = startFuel.toFixed(1);
+            this.updateFuelMeter(fuelMeter, true);
+            this.updateFuelPumped(fuelPumped, true);
+            this.updateFuelVector(fuelVector, true);
+            this.updateTotalFuel(totalFuel, true);
+            this.updateFuelPoints(fuelPoints, true);
+        } else if (this._fuelMeter != undefined && this._pumpFactor != undefined && this._fuelVector != undefined && this.submittedFuel()) {
+            // Post flight actuals
+            var submittedFuel = this.submittedFuel();
+            var fuelPumped = this._fuelMeter * this._pumpFactor;
+            var totalFuel = fuelPumped - this._fuelVector;
+            var fuelPoints = Math.abs(totalFuel - submittedFuel) / submittedFuel * 3000;
+
+            this.updateFuelPumped(fuelPumped);
+            this.updateTotalFuel(totalFuel);
+            this.updateFuelPoints(fuelPoints);
+        }
     }
 
     resetAverageGS()
@@ -704,7 +935,7 @@ class Leg
         this.fuelFlow = 0;
         this.estFuel = 0;
         this.actFuel = 0;
-        this.oat = fillOAT;
+        this.oat = flightStatus ? flightStatus.fillOAT() : 0;
         this.estCummulativeFuel = 0;
         this.actCummulativeFuel = 0;
         this.compFuel = 0;
@@ -743,7 +974,7 @@ class Leg
 
         var thisLeg = this;
 
-        makeElementOATEditable(this.cells[Leg.cellIndexOAT],
+        makeOATElementEditable(this.cells[Leg.cellIndexOAT],
                                function() { return thisLeg.oat; },
                                function(newTemp) {
                                                      thisLeg.updateOAT(newTemp);
@@ -965,11 +1196,13 @@ class Leg
     {
         var previousLeg = this.previousLeg();
 
-        var previousOAT = previousLeg ? previousLeg.oat : fillOAT;
-        this.compFuel = (previousOAT - this.oat) * fuelCompFarenheit * (startFuel - this.actCummulativeFuel);
-        var priorFuelUsed = previousLeg ? previousLeg.fuelUsed : 0;
-        this.fuelUsed = priorFuelUsed + this.actFuel + this.compFuel;
-        fuelUsed = this.fuelUsed;
+        if (flightStatus) {
+            var previousOAT = previousLeg ? previousLeg.oat : flightStatus.fillOAT();
+            this.compFuel = (previousOAT - this.oat) * fuelCompFarenheit * (flightStatus.startFuel() - this.actCummulativeFuel);
+            var priorFuelUsed = previousLeg ? previousLeg.fuelUsed : 0;
+            this.fuelUsed = priorFuelUsed + this.actFuel + this.compFuel;
+            flightStatus.updateFuelUsed(this.fuelUsed);
+        }
 
         this.redrawNeeded = true;
     }
@@ -1357,7 +1590,10 @@ class Leg
                 currLeg.startTime = markTime;
 
                 if (!state.isTiming() && currLeg.startFlightTiming) {
+                    // &&&& Should we round down to the nearest second
                     state.setTiming();
+                    if (flightStatus)
+                        flightStatus.setTakeoffTime(markTime);
                     etaGate = currLeg.estTimeRemaining.addDate(markTime);
                 }
 
@@ -1827,6 +2063,7 @@ function showGeolocationError(error) {
         break;
     }
 
+/*
     // &&&& Testing code when GPS location is not available.
     var position = {
         coords: {
@@ -1840,6 +2077,7 @@ function showGeolocationError(error) {
     };
     currentLocation = updateTimeAndPosition(position);
     // &&&&
+*/
 }
 
 function updateTimeAndPosition(position) {
@@ -2105,7 +2343,7 @@ function selectElementContents(el)
     sel.addRange(range);
 }
 
-function makeElementOATEditable(element, getCurrentValue, setNewValue)
+function makeElementEditable(element, getCurrentValue, setNewValue, setIfValidValue, isValidKeycode)
 {
     element.contentEditable = true;
 
@@ -2117,14 +2355,48 @@ function makeElementOATEditable(element, getCurrentValue, setNewValue)
     element.addEventListener('keydown', function(event) {
         if (event.keyCode == 13 || event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192) {
             var newTemp = parseInt(this.innerHTML);
-            if (event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192)
-                setNewValue();
-            else if (newTemp > 0 && newTemp < 130)
-                setNewValue(newTemp);
+            if (event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192) {
+                if (setNewValue)
+                    setNewValue();
+            } else
+                setIfValidValue(this.innerHTML);
             element.blur();
-        } else if (!editKeyCodes.includes(event.keyCode) && (event.keyCode < 48 || event.keyCode > 57))
+        } else if (!editKeyCodes.includes(event.keyCode) && !isValidKeycode(event.keyCode))
             event.preventDefault();
     }, { capture: true});
+}
+
+function makeOATElementEditable(element, getCurrentValue, setNewValue)
+{
+    makeElementEditable(element, getCurrentValue, setNewValue, function(text) {
+        var newTemp = parseInt(text);
+        if (newTemp > 0 && newTemp < 130)
+            setNewValue(newTemp);
+    }, function(keyCode) {
+        return (keyCode >= 48 && keyCode <= 57);
+    });
+}
+
+function makeFuelElementEditable(element, getCurrentValue, setNewValue)
+{
+    makeElementEditable(element, getCurrentValue, setNewValue, function(text) {
+        var newFuel = parseFloat(text);
+        if (newFuel >= 0.0 && newFuel <= 2000.0)
+            setNewValue(newFuel);
+    }, function(keyCode) {
+        return ((keyCode >= 48 && keyCode <= 57) || keyCode == 190);
+    });
+}
+
+function makePumpFactorElementEditable(element, getCurrentValue, setNewValue)
+{
+    makeElementEditable(element, getCurrentValue, setNewValue, function(text) {
+        var newFuel = parseFloat(text);
+        if (newFuel >= 0.90 && newFuel <= 1.1)
+            setNewValue(newFuel);
+    }, function(keyCode) {
+        return ((keyCode >= 48 && keyCode <= 57) || keyCode == 190);
+    });
 }
 
 function showPopup(popupId, show)
