@@ -1323,6 +1323,9 @@ class Leg
                         var climbEndLocation = climbStartLocation.locationFrom(this.course, climbDistance);
                         previousLeg.location = climbEndLocation;
                         previousLeg.updateDistanceAndBearing(climbStartLocation);
+                        var previousPreviousLeg = previousLeg.previousLeg();
+                        if (previousPreviousLeg)
+                            previousLeg.estCummulativeFuel = previousPreviousLeg.estCummulativeFuel + previousLeg.estFuel;
                         this.ete = undefined;
                         this.updateDistanceAndBearing(climbEndLocation);
                     } else {
