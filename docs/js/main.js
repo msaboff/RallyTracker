@@ -2201,7 +2201,7 @@ function openDB()
     };
     request.onsuccess = function(event) {
         db = event.target.result;
-        updateDBIfNeeded();
+//        updateDBIfNeeded();
         setTimeout(start(), 0);
     };
     request.onupgradeneeded = function(event) {
