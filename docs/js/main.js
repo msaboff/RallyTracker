@@ -2188,8 +2188,12 @@ var dbName = "RallyTrackerDB";
 function openDB()
 {
     let _indexedDB = window._indexedDB || window.indexedDB || window.webkitIndexedDB;
-//    let request = _indexedDB.open(dbName, 1);
-    let request = _indexedDB.deleteDatabase(dbName, 1);
+    let request = undefined;
+    let deleteDB = false;
+    if (deleteDB)
+        request = _indexedDB.deleteDatabase(dbName, 1);
+    else        
+        request = _indexedDB.open(dbName, 1);
 
     request.onerror = function(event) {
         status("Could not open " + dbName + " IndexedDB");
@@ -2197,7 +2201,7 @@ function openDB()
     };
     request.onsuccess = function(event) {
         db = event.target.result;
-//        updateDBIfNeeded();
+        updateDBIfNeeded();
         setTimeout(start(), 0);
     };
     request.onupgradeneeded = function(event) {
