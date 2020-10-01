@@ -1,17 +1,17 @@
 CACHE MANIFEST
-# Tue June 20 21:49:00 PDT 2018
+# Thus October 1 12:03:00 PDT 2020
 
 CACHE:
+# /RallyTracker/
+# /RallyTracker/index.html
+# /RallyTracker/js/main.js
+# /RallyTracker/js/waypoints.json
+# /RallyTracker/css/styles.css
+
+NETWORK:
+
 /RallyTracker/
 /RallyTracker/index.html
 /RallyTracker/js/main.js
 /RallyTracker/js/waypoints.json
 /RallyTracker/css/styles.css
-
-NETWORK:
-
-# /RallyTracker/
-# /RallyTracker/index.html
-# /RallyTracker/js/main.js
-# /RallyTracker/js/waypoints.json
-#  /RallyTracker/css/styles.css

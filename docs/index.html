@@ -40,7 +40,7 @@
       <td><div class="status-center" id="currentHeading"></div></td>
       <td><div class="status-center" id="currentAccuracy"></div></td>
       <td><div class="status-center" id="currentTimeStamp"></div></td>
-      <td><div class="status-center" id="takeoffTime"></div></td>
+      <td><div class="status-center" id="takeoffTime" onclick="showStartTimeAdjustPopup()"></div></td>
       <td><div class="status-center" id="timeToGate"></div></td>
       <td><div class="status-center" id="submittedTime"></div></td>
       <td><div class="status-center" id="submittedFuel"></div></td>
@@ -153,6 +153,15 @@
 <div id="fade" class="black_overlay"></div>
 <div id="status"></div>
 </footer>
+<div id="start-time-adjust-popup" class="white_content">
+  <h2>Start Time Adjust</h2>
+  <button class="time_adjust" onclick="restoreOriginalTakeoffTime()" id="StartTimeAdjustPopup_orig"></button><br>
+  <button class="time_adjust" onclick="adjustStartTimeSeconds(0)" id="StartTimeAdjustPopup_seconds0"></button><br>
+  <button class="time_adjust" onclick="adjustStartTimeSeconds(15)" id="StartTimeAdjustPopup_seconds15"></button><br>
+  <button class="time_adjust" onclick="adjustStartTimeSeconds(30)" id="StartTimeAdjustPopup_seconds30"></button><br>
+  <button class="time_adjust" onclick="adjustStartTimeSeconds(45)" id="StartTimeAdjustPopup_seconds45"></button><br>
+  <button class="time_adjust" onclick="hideStartTimeAdjustPopup()">Cancel</button>
+</div>
 <div id="user-waypoint-popup" class="white_content">
   <h2>User Waypoint</h2>
   Name: <input type="text" id="UserWaypointPopup_name"><br>

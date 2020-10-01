@@ -7,6 +7,9 @@ function status(msg)
     statusElement.innerHTML = msg;
 }
 
+var maxWaypointNameLen = 12;
+var maxWaypointDescLen = 35;
+
 var metersPerSecToMPH = 2.23694;
 var metersPerSecToKnots = 1.94384;
 var metersToFeet = 3.28084;
@@ -57,13 +60,13 @@ function decimalLatitudeFromString(latitudeString)
     if (typeof latitudeString != "string")
         return 0;
 
-    var match = latitudeString.match(LatRE);
+    let match = latitudeString.match(LatRE);
 
     if (!match)
         return 0;
 
-    var result = 0;
-    var sign = 1;
+    let result = 0;
+    let sign = 1;
 
     if (match[1] && (match[1].toUpperCase() == "S" || match[1] == "-"))
         sign = -1;
@@ -73,16 +76,16 @@ function decimalLatitudeFromString(latitudeString)
     if (result != 90) {
         if (match[3]) {
             // e.g. N37 42.874
-            var minutes = Number(match[3]);
+            let minutes = Number(match[3]);
             result = result + (minutes / 60);
         } else if (match[4]) {
             // e.g. N37.30697
-            var decimalDegrees = Number(match[4]);
+            let decimalDegrees = Number(match[4]);
             result = result + decimalDegrees;
         } else if (match[5]) {
             // e.g. N37 18" 27'
-            var degrees = Number(match[6]);
-            var minutes = Number(match[7]);
+            let degrees = Number(match[6]);
+            let minutes = Number(match[7]);
             result = result + (degrees + minutes / 60) / 60;
         }
     }
@@ -97,13 +100,13 @@ function decimalLongitudeFromString(longitudeString)
     if (typeof longitudeString != "string")
         return 0;
 
-    var match = longitudeString.match(LongRE);
+    let match = longitudeString.match(LongRE);
 
     if (!match)
         return 0;
 
-    var result = 0;
-    var sign = 1;
+    let result = 0;
+    let sign = 1;
 
     if (match[1] && (match[1].toUpperCase() == "W" || match[1] == "-"))
         sign = -1;
@@ -113,16 +116,16 @@ function decimalLongitudeFromString(longitudeString)
     if (result != 180) {
         if (match[3]) {
             // e.g. W121 53.254
-            var minutes = Number(match[3]);
+            let minutes = Number(match[3]);
             result = result + (minutes / 60);
         } else if (match[4]) {
             // e.g. W121.8876
-            var decimalDegrees = Number(match[4]);
+            let decimalDegrees = Number(match[4]);
             result = result + decimalDegrees;
         } else if (match[5]) {
             // e.g. W121 53" 15'
-            var degrees = Number(match[6]);
-            var minutes = Number(match[7]);
+            let degrees = Number(match[6]);
+            let minutes = Number(match[7]);
             result = result + (degrees + minutes / 60) / 60;
         }
     }
@@ -213,7 +216,7 @@ class Time
         }
 
         if (typeof time == "string") {
-            var match = time.match(TimeRE);
+            let match = time.match(TimeRE);
 
             if (!match) {
                 this._seconds = 0;
@@ -221,14 +224,14 @@ class Time
             }
 
             if (match[3]) {
-                var hours = parseInt(match[1].toString());
-                var minutes = parseInt(match[2].toString());
-                var seconds = parseInt(match[3].toString());
+                let hours = parseInt(match[1].toString());
+                let minutes = parseInt(match[2].toString());
+                let seconds = parseInt(match[3].toString());
 
                 this._seconds = (hours * 60 + minutes) * 60 + seconds;
             } else if (match[2]) {
-                var minutes = parseInt(match[1].toString());
-                var seconds = parseInt(match[2].toString());
+                let minutes = parseInt(match[1].toString());
+                let seconds = parseInt(match[2].toString());
 
                 this._seconds = minutes * 60 + seconds;
             } else
@@ -256,8 +259,8 @@ class Time
 
     static differenceBetween(time2, time1)
     {
-        var seconds1 = (time1.valueOf() + 500) / 1000 | 0;
-        var seconds2 = (time2.valueOf() + 500) / 1000 | 0;
+        let seconds1 = (time1.valueOf() + 500) / 1000 | 0;
+        let seconds2 = (time2.valueOf() + 500) / 1000 | 0;
         return new Time(seconds2 - seconds1);
     }
 
@@ -278,14 +281,14 @@ class Time
 
     toString()
     {
-        var result = "";
-        var seconds = this._seconds % 60;
+        let result = "";
+        let seconds = this._seconds % 60;
         if (seconds < 0) {
             result = "-";
             seconds = -seconds;
         }
-        var minutes = this._seconds / 60 | 0;
-        var hours = minutes / 60 | 0;
+        let minutes = this._seconds / 60 | 0;
+        let hours = minutes / 60 | 0;
         minutes = minutes % 60;
 
         if (hours)
@@ -311,74 +314,74 @@ class GeoLocation
 
     latitudeString()
     {
-        var latitude = this.latitude;
-        var latitudePrefix = "N";
+        let latitude = this.latitude;
+        let latitudePrefix = "N";
         if (latitude < 0) {
             latitude = -latitude;
             latitudePrefix = "S"
         }
-        var latitudeDegrees = Math.floor(latitude);
-        var latitudeMinutes = ((latitude - latitudeDegrees) * 60).toFixed(3);
-        var latitudeMinutesFiller = latitudeMinutes < 10 ? " " : "";
+        let latitudeDegrees = Math.floor(latitude);
+        let latitudeMinutes = ((latitude - latitudeDegrees) * 60).toFixed(3);
+        let latitudeMinutesFiller = latitudeMinutes < 10 ? " " : "";
         return latitudePrefix + latitudeDegrees + "&deg" + latitudeMinutesFiller + latitudeMinutes + "'";
     }
 
     longitudeString()
     {
-        var longitude = this.longitude;
-        var longitudePrefix = "E";
+        let longitude = this.longitude;
+        let longitudePrefix = "E";
         if (longitude < 0) {
             longitude = -longitude;
             longitudePrefix = "W"
         }
 
-        var longitudeDegrees = Math.floor(longitude);
-        var longitudeMinutes = ((longitude - longitudeDegrees) * 60).toFixed(3);
-        var longitudeMinutesFiller = longitudeMinutes < 10 ? " " : "";
+        let longitudeDegrees = Math.floor(longitude);
+        let longitudeMinutes = ((longitude - longitudeDegrees) * 60).toFixed(3);
+        let longitudeMinutesFiller = longitudeMinutes < 10 ? " " : "";
         return longitudePrefix + longitudeDegrees + "&deg" + longitudeMinutesFiller + longitudeMinutes + "'";
     }
 
     distanceTo(otherLocation)
     {
-        var dLat = (otherLocation.latitude - this.latitude).toRadians();
-        var dLon = (otherLocation.longitude - this.longitude).toRadians();
-        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+        let dLat = (otherLocation.latitude - this.latitude).toRadians();
+        let dLon = (otherLocation.longitude - this.longitude).toRadians();
+        let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
             Math.cos(this.latitude.toRadians()) * Math.cos(otherLocation.latitude.toRadians()) *
             Math.sin(dLon/2) * Math.sin(dLon/2);
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         return earthRadius * c;
     }
     
     bearingFrom(otherLocation)
     {
-        var dLon = (this.longitude - otherLocation.longitude).toRadians();
-        var thisLatitudeRadians = this.latitude.toRadians();
-        var otherLatitudeRadians = otherLocation.latitude.toRadians();
-        var y = Math.sin(dLon) * Math.cos(this.latitude.toRadians());
-        var x = Math.cos(otherLatitudeRadians) * Math.sin(thisLatitudeRadians) -
+        let dLon = (this.longitude - otherLocation.longitude).toRadians();
+        let thisLatitudeRadians = this.latitude.toRadians();
+        let otherLatitudeRadians = otherLocation.latitude.toRadians();
+        let y = Math.sin(dLon) * Math.cos(this.latitude.toRadians());
+        let x = Math.cos(otherLatitudeRadians) * Math.sin(thisLatitudeRadians) -
             Math.sin(otherLatitudeRadians) * Math.cos(thisLatitudeRadians) * Math.cos(dLon);
         return (Math.atan2(y, x).toDegrees() + 720 + magneticVariation) % 360;
     }
 
     bearingTo(otherLocation)
     {
-        var dLon = (otherLocation.longitude - this.longitude).toRadians();
-        var thisLatitudeRadians = this.latitude.toRadians();
-        var otherLatitudeRadians = otherLocation.latitude.toRadians();
-        var y = Math.sin(dLon) * Math.cos(otherLocation.latitude.toRadians());
-        var x = Math.cos(thisLatitudeRadians) * Math.sin(otherLatitudeRadians) -
+        let dLon = (otherLocation.longitude - this.longitude).toRadians();
+        let thisLatitudeRadians = this.latitude.toRadians();
+        let otherLatitudeRadians = otherLocation.latitude.toRadians();
+        let y = Math.sin(dLon) * Math.cos(otherLocation.latitude.toRadians());
+        let x = Math.cos(thisLatitudeRadians) * Math.sin(otherLatitudeRadians) -
             Math.sin(thisLatitudeRadians) * Math.cos(otherLatitudeRadians) * Math.cos(dLon);
         return (Math.atan2(y, x).toDegrees() + 720 + magneticVariation) % 360
     }
 
     locationFrom(bearing, distance)
     {
-        var bearingRadians = (bearing - magneticVariation).toRadians();
-        var thisLatitudeRadians = this.latitude.toRadians();
-        var angularDistance = distance / earthRadius;
-        var latitudeRadians = Math.asin(Math.sin(thisLatitudeRadians) * Math.cos(angularDistance) +
+        let bearingRadians = (bearing - magneticVariation).toRadians();
+        let thisLatitudeRadians = this.latitude.toRadians();
+        let angularDistance = distance / earthRadius;
+        let latitudeRadians = Math.asin(Math.sin(thisLatitudeRadians) * Math.cos(angularDistance) +
                                  Math.cos(thisLatitudeRadians) * Math.sin(angularDistance) * Math.cos(bearingRadians));
-        var longitudeRadians = this.longitude.toRadians() +
+        let longitudeRadians = this.longitude.toRadians() +
             Math.atan2(Math.sin(bearingRadians) * Math.sin(angularDistance) * Math.cos(thisLatitudeRadians),
                        Math.cos(angularDistance) - Math.sin(thisLatitudeRadians) * Math.sin(latitudeRadians));
 
@@ -397,9 +400,9 @@ class EngineConfig
         this._trueAirspeed = trueAirspeed;
 
         this.cells = [];
-        var rows = engineConfigTableElement.rows;
+        let rows = engineConfigTableElement.rows;
 
-        for (var i = 0; i < 5; i++)
+        for (let i = 0; i < 5; i++)
             this.cells[i] = rows.item(i).insertCell(-1);
 
         this.deselect();
@@ -417,8 +420,8 @@ class EngineConfig
 
     deselect()
     {
-        for (var i = 0; i < 5; i++) {
-            var classes = "engine-config";
+        for (let i = 0; i < 5; i++) {
+            let classes = "engine-config";
             if (i == 0)
                 classes = classes + " engine-config-type";
             this.cells[i].className = classes;
@@ -429,8 +432,8 @@ class EngineConfig
     
     select()
     {
-        for (var i = 0; i < 5; i++) {
-            var classes = "engine-config-highlight";
+        for (let i = 0; i < 5; i++) {
+            let classes = "engine-config-highlight";
             if (i == 0)
                 classes = classes + " engine-config-type";
             this.cells[i].className = classes;
@@ -455,7 +458,7 @@ class EngineConfig
             return;
         }
 
-        var newConfig = new EngineConfig(type, rpm, manifoldPressure, fuelFlow, trueAirspeed);
+        let newConfig = new EngineConfig(type, rpm, manifoldPressure, fuelFlow, trueAirspeed);
         this.allConfigs.push(newConfig);
         this.allConfigsByType[type] = newConfig;
 
@@ -508,6 +511,7 @@ class FlightStatus
         this.recentGroundSpeeds = [];
 
         this._takeoffTime = undefined;
+        this._origTakeoffTime = undefined;
         this._submittedTime = undefined;
         this._submittedFuel = undefined;
         this._startFuel = 80;
@@ -607,7 +611,7 @@ class FlightStatus
 
     getFeetOrNull(meters)
     {
-        var feet = "";
+        let feet = "";
 
         if (meters)
             feet = (meters * metersToFeet).toFixed(0) + "'";
@@ -622,8 +626,23 @@ class FlightStatus
 
     setTakeoffTime(time)
     {
+        if (!time)
+            return;
+
         this._takeoffTime = time;
+        if (!this._origTakeoffTime)
+            this._origTakeoffTime = new Date(time.valueOf());
         this.takeoffTimeElement.innerHTML = this._takeoffTime.toTimeString().split(" ")[0];
+    }
+
+    getTakeoffTime()
+    {
+        return this._takeoffTime;
+    }
+
+    getOriginalTakeoffTime()
+    {
+        return this._origTakeoffTime;
     }
 
     resetActualFuelForFlight()
@@ -797,15 +816,15 @@ class FlightStatus
             this.latitudeElement.innerHTML = location.latitudeString();
             this.longitudeElement.innerHTML = location.longitudeString();
 
-            var currentSpeed = position.coords.speed * this.speedConvert;
+            let currentSpeed = position.coords.speed * this.speedConvert;
             this.speedElement.innerHTML = currentSpeed.toFixed(1);
             this.recentGroundSpeeds.unshift(currentSpeed);
             if (this.recentGroundSpeeds.length > 10) {
                 this.recentGroundSpeeds.pop();
             }
-            var averageSpeed = 0;
-            var numberSpeeds = this.recentGroundSpeeds.length;
-            for (var i = 0; i < numberSpeeds; i++)
+            let averageSpeed = 0;
+            let numberSpeeds = this.recentGroundSpeeds.length;
+            for (let i = 0; i < numberSpeeds; i++)
                 averageSpeed += this.recentGroundSpeeds[i];
             averageSpeed = averageSpeed / numberSpeeds;
             currentAvgGS = averageSpeed;
@@ -816,7 +835,7 @@ class FlightStatus
                 this.deltaGSElement.className = "status-center";
             } else {
                 this.requiredGSElement.innerHTML = requiredSpeed.toFixed(1);
-                var deltaGS = currentSpeed - requiredSpeed;
+                let deltaGS = currentSpeed - requiredSpeed;
                 if (deltaGS > 1.0) {
                     this.deltaGSElement.className = "status-center delta-speed-ahead";
                 } else if (deltaGS < -1.0) {
@@ -826,9 +845,9 @@ class FlightStatus
                 }
                 this.deltaGSElement.innerHTML = deltaGS.toFixed(1);
             }
-            var heading = "";
+            let heading = "";
             if (position.coords.heading) {
-                var headingVal = Math.round(position.coords.heading + magneticVariation);
+                let headingVal = Math.round(position.coords.heading + magneticVariation);
                 headingVal = (headingVal + 360) % 360;
                 if (!headingVal)
                     headingVal = 360;
@@ -837,7 +856,7 @@ class FlightStatus
             this.headingElement.innerHTML = heading;
             this.altitudeElement.innerHTML = this.getFeetOrNull(position.coords.altitude);
             this.accuracyElement.innerHTML = this.getFeetOrNull(position.coords.accuracy);
-            var time = new Date(position.timestamp);
+            let time = new Date(position.timestamp);
             this.timestampElement.innerHTML = time.toTimeString().split(" ")[0];
         }
         this.currentTimeElement.innerHTML = now.toTimeString().split(" ")[0];
@@ -856,14 +875,14 @@ class FlightStatus
     {
         if (state.isRunning()) {
             // In flight estimates
-            var fuelMeter = this._fuelUsed;
-            var fuelPumped = fuelMeter * this.pumpFactor();
-            var fuelVector = 0.0;
-            var submittedFuel = this.submittedFuel();
+            let fuelMeter = this._fuelUsed;
+            let fuelPumped = fuelMeter * this.pumpFactor();
+            let fuelVector = 0.0;
+            let submittedFuel = this.submittedFuel();
             if (fuelPumped > submittedFuel)
                 fuelVector = fuelPumped - this.submittedFuel();
-            var totalFuel = fuelPumped - fuelVector;
-            var fuelPoints = 0;
+            let totalFuel = fuelPumped - fuelVector;
+            let fuelPoints = 0;
             if (submittedFuel > 0)
                 fuelPoints = Math.abs(totalFuel - submittedFuel) / submittedFuel * 3000;
 
@@ -875,10 +894,10 @@ class FlightStatus
             this.updateFuelPoints(fuelPoints, true);
         } else if (this._fuelMeter != undefined && this._pumpFactor != undefined && this._fuelVector != undefined && this.submittedFuel()) {
             // Post flight actuals
-            var submittedFuel = this.submittedFuel();
-            var fuelPumped = this._fuelMeter * this._pumpFactor;
-            var totalFuel = fuelPumped - this._fuelVector;
-            var fuelPoints = Math.abs(totalFuel - submittedFuel) / submittedFuel * 3000;
+            let submittedFuel = this.submittedFuel();
+            let fuelPumped = this._fuelMeter * this._pumpFactor;
+            let totalFuel = fuelPumped - this._fuelVector;
+            let fuelPoints = Math.abs(totalFuel - submittedFuel) / submittedFuel * 3000;
 
             this.updateFuelPumped(fuelPumped);
             this.updateTotalFuel(totalFuel);
@@ -954,10 +973,10 @@ class Leg
         // Waypoint | Lat  | Leg Dist | TAS | WindDir@WindSpd | Est GS | ETE |  ETR | Fuel Flow | Est Fuel | ECF | Comp
         //  Notes   | Long | Rem Dist | CRS |       Hdg       | Act GS | ATE |  ATR |    OAT    | Act Fuel | ACF | Used
 
-        for (var col = 0; col <= 11; col++) {
+        for (let col = 0; col <= 11; col++) {
             this.cells[col] = this.row[0].insertCell(col);
             this.cells[col + 12] = this.row[1].insertCell(col);
-            var width = "7%";
+            let width = "7%";
             if (col == 0)
                 width = "20%";
             else if (col == 1)
@@ -978,7 +997,7 @@ class Leg
         this.cells[Leg.cellIndexOAT].leg = this;
         this.updateOAT();
 
-        var thisLeg = this;
+        let thisLeg = this;
 
         makeOATElementEditable(this.cells[Leg.cellIndexOAT],
                                function() { return thisLeg.oat; },
@@ -995,7 +1014,7 @@ class Leg
 
     remove()
     {
-        var rowIndex = this.row[0].rowIndex;
+        let rowIndex = this.row[0].rowIndex;
         rowIndex = this.row[1].rowIndex;
         waypointsTableElement.deleteRow(this.row[0].rowIndex);
         waypointsTableElement.deleteRow(this.row[1].rowIndex);
@@ -1052,18 +1071,18 @@ class Leg
     select()
     {
 /*  &&&& Trying to automatically scroll into view
-        var offsetTop = waypointsTableElement.offsetTop;
-        var topRow = this.row[0];
+        let offsetTop = waypointsTableElement.offsetTop;
+        let topRow = this.row[0];
         topRow.scrollTop = offsetTop + topRow.scrollHeight;
 */
-        var rowClasses = "waypoint-row-highlight " + (this.index % 2 ? "waypoint-row-odd" : "row-even");
+        let rowClasses = "waypoint-row-highlight " + (this.index % 2 ? "waypoint-row-odd" : "row-even");
         this.row[0].className = rowClasses;
         this.row[1].className = rowClasses;
     }
 
     deselect()
     {
-        var rowClasses = "waypoint-row " + (this.index % 2 ? "waypoint-row-odd" : "row-even");
+        let rowClasses = "waypoint-row " + (this.index % 2 ? "waypoint-row-odd" : "row-even");
         this.row[0].className = rowClasses;
         this.row[1].className = rowClasses;
     }
@@ -1122,16 +1141,16 @@ class Leg
 
     static processLegModifier(fix)
     {
-        var match = fix.match(LegModifier);
+        let match = fix.match(LegModifier);
 
         if (match) {
             if (match[1] && match[2]) {
-                var windDirection = parseInt(match[1].toString()) % 360;
-                var windSpeed = parseInt(match[2].toString());
+                let windDirection = parseInt(match[1].toString()) % 360;
+                let windSpeed = parseInt(match[2].toString());
 
                 Leg.setDefaultWind(windDirection, windSpeed);
             } else if (match[3]) {
-                var tas = parseInt(match[3].toString());
+                let tas = parseInt(match[3].toString());
                 Leg.setTASOverride(tas);
             }
 
@@ -1151,14 +1170,14 @@ class Leg
 
     isSameWindAsPreviousLeg()
     {
-        var previousLeg = previousLeg();
+        let previousLeg = previousLeg();
 
         return previousLeg && this.isSameWind(previousLeg.windDirection, previousLeg.windSpeed);
     }
 
     isStandardTAS()
     {
-        var engineConfig = EngineConfig.getConfig(this.engineConfig);
+        let engineConfig = EngineConfig.getConfig(this.engineConfig);
 
         return (this.estTAS == engineConfig.trueAirspeed());
     }
@@ -1188,7 +1207,7 @@ class Leg
         this.distance = this.location.distanceTo(other);
         this.course = Math.round(this.location.bearingFrom(other));
         if (this.ete == undefined && this.estGS != 0) {
-            var eteSeconds = Math.round(this.distance * 3600 / this.estGS);
+            let eteSeconds = Math.round(this.distance * 3600 / this.estGS);
             this.ete = new Time(eteSeconds);
         }
 
@@ -1200,12 +1219,12 @@ class Leg
 
     updateFuelCompensation()
     {
-        var previousLeg = this.previousLeg();
+        let previousLeg = this.previousLeg();
 
         if (flightStatus) {
-            var previousOAT = previousLeg ? previousLeg.oat : flightStatus.fillOAT();
+            let previousOAT = previousLeg ? previousLeg.oat : flightStatus.fillOAT();
             this.compFuel = (previousOAT - this.oat) * fuelCompFarenheit * (flightStatus.startFuel() - this.actCummulativeFuel);
-            var priorFuelUsed = previousLeg ? previousLeg.fuelUsed : 0;
+            let priorFuelUsed = previousLeg ? previousLeg.fuelUsed : 0;
             this.fuelUsed = priorFuelUsed + this.actFuel + this.compFuel;
             flightStatus.updateFuelUsed(this.fuelUsed);
         }
@@ -1215,15 +1234,15 @@ class Leg
 
     updateActuals(date)
     {
-        var previousLeg = this.previousLeg();
+        let previousLeg = this.previousLeg();
 
         this.ate = Time.differenceBetween(date, this.startTime);
         this.actFuel = this.fuelFlow * this.ate.hours();
         this.actCummulativeFuel = (previousLeg ? previousLeg.actCummulativeFuel : 0) + this.actFuel;
 
-        var distanceCovered = this.legDistance - this.distance;
+        let distanceCovered = this.legDistance - this.distance;
         this.actGS = (this.ate.seconds() < 10 || distanceCovered < 2) ? currentAvgGS : (distanceCovered / this.ate.hours());
-        var estSecondsRemaining = this.actGS ? Math.round(this.distance * 3600 / this.actGS) : 0;
+        let estSecondsRemaining = this.actGS ? Math.round(this.distance * 3600 / this.actGS) : 0;
         this.actTimeRemaining = new Time(estSecondsRemaining);
 
         this.updateFuelCompensation();
@@ -1233,14 +1252,14 @@ class Leg
 
     propagateWind()
     {
-        var windDirection = this.windDirection;
-        var windSpeed = this.windSpeed;
+        let windDirection = this.windDirection;
+        let windSpeed = this.windSpeed;
 
         windDirection = (windDirection + 360) % 360;
         if (!windDirection)
             windDirection = 360;
 
-        for (var currLeg = this; currLeg; currLeg = currLeg.nextLeg()) {
+        for (let currLeg = this; currLeg; currLeg = currLeg.nextLeg()) {
             currLeg.windDirection = windDirection;
             currLeg.windSpeed = windSpeed;
             if (currLeg.stopFlightTiming)
@@ -1256,20 +1275,20 @@ class Leg
             return;
         }
 
-        var windDirectionRadians = this.windDirection.toRadians();
-        var courseRadians = this.course.toRadians();
-        var swc = (this.windSpeed / this.estTAS) * Math.sin(windDirectionRadians - courseRadians);
+        let windDirectionRadians = this.windDirection.toRadians();
+        let courseRadians = this.course.toRadians();
+        let swc = (this.windSpeed / this.estTAS) * Math.sin(windDirectionRadians - courseRadians);
         if (Math.abs(swc) > 1) {
             status("Wind to strong to fly!");
             return;
         }
 
-        var headingRadians = courseRadians + Math.asin(swc);
+        let headingRadians = courseRadians + Math.asin(swc);
         if (headingRadians < 0)
             headingRadians += TwoPI;
         if (headingRadians > TwoPI)
             headingRadians -= TwoPI
-        var groundSpeed = this.estTAS * Math.sqrt(1 - swc * swc) -
+        let groundSpeed = this.estTAS * Math.sqrt(1 - swc * swc) -
             this.windSpeed * Math.cos(windDirectionRadians - courseRadians);
         if (groundSpeed < 0) {
             status("Wind to strong to fly!");
@@ -1282,7 +1301,7 @@ class Leg
 
     calculateRow()
     {
-        var engineConfig = EngineConfig.getConfig(this.engineConfig);
+        let engineConfig = EngineConfig.getConfig(this.engineConfig);
 
         if (!this.estTAS)
             this.estTAS = engineConfig.trueAirspeed();
@@ -1297,8 +1316,8 @@ class Leg
         if (this.specialUpdateForward)
             this.specialUpdateForward();
 
-        var previousLeg = this.previousLeg();
-        var havePrevious = true;
+        let previousLeg = this.previousLeg();
+        let havePrevious = true;
         if (!previousLeg) {
             havePrevious = false;
             previousLeg = this;
@@ -1306,24 +1325,24 @@ class Leg
                 this.ete = new Time(0);
         }
 
-        var thisLegType = this.type;
+        let thisLegType = this.type;
         if (thisLegType == "Climb" && havePrevious)
             this.location = previousLeg.location;
         else {
             this.updateDistanceAndBearing(previousLeg.location);
             this.updateForWind();
             this.legDistance = this.distance;
-            var nextLeg = this.nextLeg();
-            var previousLegType = previousLeg.type;
+            let nextLeg = this.nextLeg();
+            let previousLegType = previousLeg.type;
             if (havePrevious) {
                 if (previousLegType == "Climb") {
-                    var climbDistance = distanceFromSpeedAndTime(previousLeg.estGS, previousLeg.climbTime);
+                    let climbDistance = distanceFromSpeedAndTime(previousLeg.estGS, previousLeg.climbTime);
                     if (climbDistance < this.distance) {
-                        var climbStartLocation = previousLeg.location;
-                        var climbEndLocation = climbStartLocation.locationFrom(this.course, climbDistance);
+                        let climbStartLocation = previousLeg.location;
+                        let climbEndLocation = climbStartLocation.locationFrom(this.course, climbDistance);
                         previousLeg.location = climbEndLocation;
                         previousLeg.updateDistanceAndBearing(climbStartLocation);
-                        var previousPreviousLeg = previousLeg.previousLeg();
+                        let previousPreviousLeg = previousLeg.previousLeg();
                         if (previousPreviousLeg)
                             previousLeg.estCummulativeFuel = previousPreviousLeg.estCummulativeFuel + previousLeg.estFuel;
                         this.ete = undefined;
@@ -1332,29 +1351,29 @@ class Leg
                         status("Not enough distance to climb in leg #" + previousLeg.index);
                     }
                 } else if ((thisLegType == "Left" || thisLegType == "Right") && nextLeg && nextLeg.location) {
-                    var standardRateCircumference = this.estTAS / 30;
-                    var standardRateRadius = standardRateCircumference / TwoPI;
-                    var offsetInboundBearing = 360 + previousLeg.course + (thisLegType == "Left" ? -90 : 90);
+                    let standardRateCircumference = this.estTAS / 30;
+                    let standardRateRadius = standardRateCircumference / TwoPI;
+                    let offsetInboundBearing = 360 + previousLeg.course + (thisLegType == "Left" ? -90 : 90);
                     offsetInboundBearing = Math.round((offsetInboundBearing + 360) % 360);
                     // Save original location
                     if (!previousLeg.originalLocation)
                         previousLeg.originalLocation = previousLeg.location;
-                    var previousLocation = previousLeg.originalLocation;
-                    var inboundLocation = previousLocation.locationFrom(offsetInboundBearing, standardRateRadius);
-                    var bearingToNext = Math.round(nextLeg.location.bearingFrom(previousLocation));
-                    var offsetOutboundBearing = bearingToNext + (thisLegType == "Left" ? 90 : -90);
+                    let previousLocation = previousLeg.originalLocation;
+                    let inboundLocation = previousLocation.locationFrom(offsetInboundBearing, standardRateRadius);
+                    let bearingToNext = Math.round(nextLeg.location.bearingFrom(previousLocation));
+                    let offsetOutboundBearing = bearingToNext + (thisLegType == "Left" ? 90 : -90);
                     offsetOutboundBearing = (offsetOutboundBearing + 360) % 360;
-                    var outboundLocation = previousLocation.locationFrom(offsetOutboundBearing, standardRateRadius);
-                    var turnAngle = thisLegType == "Left" ? (360 + bearingToNext - previousLeg.course) : (360 + previousLeg.course - bearingToNext);
+                    let outboundLocation = previousLocation.locationFrom(offsetOutboundBearing, standardRateRadius);
+                    let turnAngle = thisLegType == "Left" ? (360 + bearingToNext - previousLeg.course) : (360 + previousLeg.course - bearingToNext);
                     turnAngle = (turnAngle + 360) % 360;
-                    var totalDegrees = turnAngle + 360 * this.extraTurns;
-                    var secondsInTurn = Math.round(totalDegrees / 3);
+                    let totalDegrees = turnAngle + 360 * this.extraTurns;
+                    let secondsInTurn = Math.round(totalDegrees / 3);
                     this.ete = new Time(Math.round((turnAngle + 360 * this.extraTurns) / 3));
                     this.estFuel = this.fuelFlow * this.ete.hours();
                     this.location = outboundLocation;
                     this.legDistance = this.distance = distanceFromSpeedAndTime(this.estTAS, this.ete);
                     previousLeg.location = inboundLocation;
-                    var prevPrevLeg = previousLeg.previousLeg();
+                    let prevPrevLeg = previousLeg.previousLeg();
                     if (prevPrevLeg && prevPrevLeg.location) {
                         previousLeg.ete = undefined;
                         previousLeg.updateDistanceAndBearing(prevPrevLeg.location);
@@ -1368,10 +1387,10 @@ class Leg
 
     updateBackward()
     {
-        var nextLeg = this.nextLeg();
+        let nextLeg = this.nextLeg();
 
-        var distanceRemaining;
-        var timeRemaining;
+        let distanceRemaining;
+        let timeRemaining;
 
         if (nextLeg) {
             distanceRemaining = nextLeg.distanceRemaining;
@@ -1428,6 +1447,18 @@ class Leg
         return undefined;
     }
 
+    static updateStartLegTakeoffTime(time)
+    {
+        if (this.startLegIndex < this.allLegs.length && this.startLegIndex == this.currentLegIndex) {
+            let startLeg = this.allLegs[this.startLegIndex];
+            if (startLeg.startFlightTiming) {
+                flightStatus.setTakeoffTime(time);
+                startLeg.startTime = time;
+                etaGate = startLeg.estTimeRemaining.addDate(time);
+            }
+        }
+    }
+
     static updatePositionToActiveLeg(currentLocation)
     {
         if (this.allLegs.length && this.currentLeg) {
@@ -1443,7 +1474,7 @@ class Leg
         if (this.allLegs.length == 0)
             return;
 
-        for (var i = 0; i < this.allLegs.length; i++)
+        for (let i = 0; i < this.allLegs.length; i++)
             this.allLegs[i].index = i;
     }
 
@@ -1452,16 +1483,17 @@ class Leg
         if (this.allLegs.length == 0)
             return;
 
-        var haveStartTiming = false;
-        var haveStopTiming = false;
-        for (var i = 0; i < this.allLegs.length; i++) {
-            var thisLeg = this.allLegs[i];
+        let haveStartTiming = false;
+        let haveStopTiming = false;
+        for (let i = 0; i < this.allLegs.length; i++) {
+            let thisLeg = this.allLegs[i];
             thisLeg.index = i;
             thisLeg.calculateRow();
             if (thisLeg.startFlightTiming) {
                 if (haveStartTiming)
                     status("Have duplicate Start timing leg in row " + thisLeg.toString());
                 haveStartTiming = true;
+                this.startLegIndex = i;
             }
             if (thisLeg.stopFlightTiming) {
                 if (haveStopTiming)
@@ -1475,30 +1507,30 @@ class Leg
         if (!haveStopTiming)
             Leg.getLastLeg().stopFlightTiming = true;
 
-        for (var i = 0; i < this.allLegs.length; i++)
+        for (let i = 0; i < this.allLegs.length; i++)
             this.allLegs[i].updateForward();
 
-        for (var i = this.allLegs.length - 1; i >= 0; i--)
+        for (let i = this.allLegs.length - 1; i >= 0; i--)
             this.allLegs[i].updateBackward();
 
-        for (var i = 0; i < this.allLegs.length; i++) {
-            var thisLeg = this.allLegs[i];
+        for (let i = 0; i < this.allLegs.length; i++) {
+            let thisLeg = this.allLegs[i];
             if (thisLeg.startFlightTiming) {
                 if (flightStatus)
                     flightStatus.setSubmittedTime(thisLeg.estTimeRemaining);
             }
         }
 
-        for (var i = 0; i < this.allLegs.length; i++)
+        for (let i = 0; i < this.allLegs.length; i++)
             this.allLegs[i].redraw();
     }
 
     static updateAllFuelCompensation()
     {
-        for (var i = 0; i < this.allLegs.length; i++)
+        for (let i = 0; i < this.allLegs.length; i++)
             this.allLegs[i].updateFuelCompensation();
 
-        for (var i = 0; i < this.allLegs.length; i++)
+        for (let i = 0; i < this.allLegs.length; i++)
             this.allLegs[i].redraw();
     }
 
@@ -1510,7 +1542,7 @@ class Leg
     static removeAll()
     {
         while (this.allLegs.length) {
-            var leg = this.allLegs[0];
+            let leg = this.allLegs[0];
             leg.remove();
         }
         Leg.resetModifiers();
@@ -1519,7 +1551,7 @@ class Leg
 
     static setGroundSpeed(gs)
     {
-        for (var i = 0; i < this.allLegs.length; i++) {
+        for (let i = 0; i < this.allLegs.length; i++) {
             this.allLegs[i].estGS = gs;
             this.allLegs[i].ete = 0;
         }
@@ -1528,12 +1560,12 @@ class Leg
 
     static currentRoute()
     {
-        var result = "";
-        var lastWindDirection = 0;
-        var lastWindSpeed = 0;
+        let result = "";
+        let lastWindDirection = 0;
+        let lastWindSpeed = 0;
 
-        for (var i = 0; i < this.allLegs.length; i++) {
-            var currentLeg = this.allLegs[i];
+        for (let i = 0; i < this.allLegs.length; i++) {
+            let currentLeg = this.allLegs[i];
 
             if (i) {
                 result = result + " ";
@@ -1573,8 +1605,8 @@ class Leg
             Leg.getFirstLeg().redraw();
 
             this.currentLegIndex = 1;
-            var currLeg = this.currentLeg = this.allLegs[this.currentLegIndex];
-            var startTiming = this.allLegs[0].startFlightTiming || currLeg.startFlightTiming;
+            let currLeg = this.currentLeg = this.allLegs[this.currentLegIndex];
+            let startTiming = this.allLegs[0].startFlightTiming || currLeg.startFlightTiming;
             currLeg.startTime = time;
 
             if (startTiming) {
@@ -1591,7 +1623,7 @@ class Leg
     static markCurrentLeg(useOriginalETA, markTime)
     {
         if (this.allLegs.length > 1 && this.currentLeg) {
-            var currLeg = this.currentLeg;
+            let currLeg = this.currentLeg;
             currLeg.endTime = markTime;
             currLeg.updateActuals(currLeg.endTime);
             if (state.isTiming() && (currLeg.stopFlightTiming || currLeg.index == this.allLegs.length - 1)) {
@@ -1607,7 +1639,6 @@ class Leg
                 currLeg.startTime = markTime;
 
                 if (!state.isTiming() && currLeg.startFlightTiming) {
-                    // &&&& Should we round down to the nearest second
                     state.setTiming();
                     if (flightStatus)
                         flightStatus.setTakeoffTime(markTime);
@@ -1628,6 +1659,7 @@ class Leg
 }
 
 Leg.allLegs = [];
+Leg.startLegIndex = 0;
 Leg.currentLegIndex = 0;
 Leg.currentLeg = undefined;
 Leg.defaultWindDirection = 0;
@@ -1663,7 +1695,7 @@ Leg.cellIndexACF = 22;
 Leg.cellIndexFuelUsed = 23;
 
 var RallyLegNoFixRE = new RegExp("TAXI|RUNUP|TAKEOFF|CLIMB|PATTERN|LEFT|RIGHT", "i");
-var RallyLegWithFixRE = new RegExp("^([0-9a-z\.]{3,10})\\|(START|TIMING)", "i");
+var RallyLegWithFixRE = new RegExp("^([0-9a-z\.]{3," + maxWaypointNameLen + "})\\|(START|TIMING)", "i");
 
 class RallyLeg extends Leg
 {
@@ -1695,8 +1727,8 @@ class RallyLeg extends Leg
 
     static isRallyLegWithoutFix(fix)
     {
-        var barPosition = fix.indexOf("|");
-        var firstPart = barPosition < 0 ? fix : fix.substring(0, barPosition);
+        let barPosition = fix.indexOf("|");
+        let firstPart = barPosition < 0 ? fix : fix.substring(0, barPosition);
 
         return RallyLegNoFixRE.test(firstPart);
     }
@@ -1708,7 +1740,7 @@ class RallyLeg extends Leg
 
     static fixNeeded(fix)
     {
-        var match = fix.match(RallyLegWithFixRE);
+        let match = fix.match(RallyLegWithFixRE);
 
         if (!match)
             return "";
@@ -1718,20 +1750,20 @@ class RallyLeg extends Leg
 
     static appendLegNoFix(waypointText)
     {
-        var barPosition = waypointText.indexOf("|");
-        var firstPart = barPosition < 0 ? waypointText : waypointText.substring(0, barPosition);
+        let barPosition = waypointText.indexOf("|");
+        let firstPart = barPosition < 0 ? waypointText : waypointText.substring(0, barPosition);
         firstPart = firstPart.toUpperCase();
 
-        var match = firstPart.match(RallyLegNoFixRE);
+        let match = firstPart.match(RallyLegNoFixRE);
 
         if (!match)
             return;
 
-        var legType = match[0].toString();
+        let legType = match[0].toString();
 
         switch(legType) {
         case "TAXI":
-            var taxiLeg = new TaxiLeg(waypointText);
+            let taxiLeg = new TaxiLeg(waypointText);
             this.appendLeg(taxiLeg);
             this.totalTaxiTime.add(taxiLeg.ete)
             this.taxiSegments.push(taxiLeg);
@@ -1764,12 +1796,12 @@ class RallyLeg extends Leg
 
     static appendLegWithFix(waypointText, fix, location)
     {
-        var match = waypointText.match(RallyLegWithFixRE);
+        let match = waypointText.match(RallyLegWithFixRE);
 
         if (!match)
             return;
 
-        var legType = match[2].toString();
+        let legType = match[2].toString();
 
         switch(legType) {
         case "START":
@@ -1834,18 +1866,18 @@ class TaxiLeg extends RallyLeg
 {
     constructor(fixText)
     {
-        var match = fixText.match(TaxiLegRE);
+        let match = fixText.match(TaxiLegRE);
 
-        var engineConfig = (match[1] && match[1].toString().toUpperCase() == "COLD")
+        let engineConfig = (match[1] && match[1].toString().toUpperCase() == "COLD")
             ? EngineConfig.ColdTaxi
             : EngineConfig.WarmTaxi;
         super("Taxi", "", new GeoLocation(-1, -1), engineConfig);
 
-        var taxiTimeString = "5:00";
+        let taxiTimeString = "5:00";
         if (match[2])
             taxiTimeString = match[2].toString();
 
-        var previousLeg = this.previousLeg();
+        let previousLeg = this.previousLeg();
         if (previousLeg)
             this.location = previousLeg.location;
 
@@ -1854,7 +1886,7 @@ class TaxiLeg extends RallyLeg
 
     fixName()
     {
-        var coldWarm = "Warm";
+        let coldWarm = "Warm";
         if (this.engineConfig == EngineConfig.ColdTaxi)
             coldWarm = "Cold";
 
@@ -1869,15 +1901,15 @@ class RunupLeg extends RallyLeg
 {
     constructor(fixText)
     {
-        var match = fixText.match(RunupLegRE);
+        let match = fixText.match(RunupLegRE);
 
         super("Runup", "", new GeoLocation(-1, -1), EngineConfig.Runup);
 
-        var runupTimeString = "30";
+        let runupTimeString = "30";
         if (match[1])
             runupTimeString = match[1].toString();
 
-        var previousLeg = this.previousLeg();
+        let previousLeg = this.previousLeg();
         if (previousLeg)
             this.location = previousLeg.location;
 
@@ -1897,11 +1929,11 @@ class TakeoffLeg extends RallyLeg
 {
     constructor(fixText)
     {
-        var match = fixText.match(TakeoffLegRE);
+        let match = fixText.match(TakeoffLegRE);
 
-        var bearingFromStart = 0;
-        var distanceFromStart = 0;
-        var takeoffEndLocation = RallyLeg.startLocation;
+        let bearingFromStart = 0;
+        let distanceFromStart = 0;
+        let takeoffEndLocation = RallyLeg.startLocation;
         if (match && match[2] && match[3]) {
             bearingFromStart = parseInt(match[2].toString()) % 360;
             distanceFromStart = parseFloat(match[3].toString());
@@ -1913,7 +1945,7 @@ class TakeoffLeg extends RallyLeg
         this.bearingFromStart = bearingFromStart;
         this.distanceFromStart = distanceFromStart;
 
-        var takeoffTimeString = "2:00";
+        let takeoffTimeString = "2:00";
         if (match[1])
             takeoffTimeString = match[1].toString();
 
@@ -1923,7 +1955,7 @@ class TakeoffLeg extends RallyLeg
 
     fixName()
     {
-        var result = "Takeoff";
+        let result = "Takeoff";
 
         if (this.ete.seconds() != 120)
             result += "|" + this.ete.toString();
@@ -1941,19 +1973,19 @@ class ClimbLeg extends RallyLeg
 {
     constructor(fixText)
     {
-        var match = fixText.match(ClimbLegRE);
+        let match = fixText.match(ClimbLegRE);
 
-        var altitude = 5500;
+        let altitude = 5500;
         if (match && match[1])
             altitude = match[1].toString();
 
         super("Climb", altitude + "\"", undefined, EngineConfig.Climb);
 
-        var timeToClimb = "8:00";
+        let timeToClimb = "8:00";
         if (match && match[2])
             timeToClimb = match[2].toString();
 
-        var previousLeg = this.previousLeg();
+        let previousLeg = this.previousLeg();
         if (previousLeg)
             this.location = previousLeg.location;
         this.altitude = altitude;
@@ -1981,12 +2013,12 @@ class PatternLeg extends RallyLeg
     {
         super("Pattern", "", undefined, EngineConfig.Pattern);
 
-        var previousLeg = this.previousLeg();
+        let previousLeg = this.previousLeg();
         if (previousLeg)
             this.location = previousLeg.location;
 
-        var match = fixText.match(PatternLegRE);
-        var patternTimeString = match[1].toString();
+        let match = fixText.match(PatternLegRE);
+        let patternTimeString = match[1].toString();
         this.ete = new Time(patternTimeString);
     }
 
@@ -2003,14 +2035,14 @@ class TurnLeg extends RallyLeg
 {
     constructor(fixText, isRightTurn)
     {
-        var match = fixText.match(TurnLegRE);
+        let match = fixText.match(TurnLegRE);
 
-        var direction = "Left";
+        let direction = "Left";
         if (match && match[1])
             direction = match[1].toString().toUpperCase() == "LEFT" ? "Left" : "Right";
 
-        var engineConfig = EngineConfig.Cruise;
-        var lastLeg = Leg.getLastLeg();
+        let engineConfig = EngineConfig.Cruise;
+        let lastLeg = Leg.getLastLeg();
         if (lastLeg)
             engineConfig = lastLeg.engineConfig;
 
@@ -2021,7 +2053,7 @@ class TurnLeg extends RallyLeg
 
     fixName()
     {
-        var result = this.type;
+        let result = this.type;
         if (this.extraTurns)
             result += ("|+" + this.extraTurns);
 
@@ -2035,8 +2067,8 @@ function distanceFromSpeedAndTime(speed, time)
 }
 
 var geolocationOptions = {
-  enableHighAccuracy: true, 
-  maximumAge        : 0, 
+    enableHighAccuracy: true, 
+    maximumAge        : 0, 
     timeout           : 1000
 };
 
@@ -2045,9 +2077,13 @@ var flightStatus = null;
 
 function startLocationUpdates()
 {
-    if (navigator.geolocation)
-        watchPositionID = navigator.geolocation.watchPosition(updateTimeAndPosition, showGeolocationError, geolocationOptions);
-    else
+    if (navigator.geolocation) {
+        try {
+            watchPositionID = navigator.geolocation.watchPosition(updateTimeAndPosition, showGeolocationError, geolocationOptions);
+        } catch(e) {
+            status("geolocation.watchPosition error: " + e);
+        }
+    } else
         status("Geolocation is not supported by this browser.");
 
     if (!timeUpdateInterval)
@@ -2098,8 +2134,8 @@ function showGeolocationError(error) {
 }
 
 function updateTimeAndPosition(position) {
-    var now = new Date();
-    var timeSinceLastUpdate = now.valueOf() - lastUpdate.valueOf();
+    let now = new Date();
+    let timeSinceLastUpdate = now.valueOf() - lastUpdate.valueOf();
 
     if (!position && timeSinceLastUpdate < 1000)
         return;
@@ -2109,14 +2145,14 @@ function updateTimeAndPosition(position) {
     if (state.isTiming())
         deltaTime = Time.differenceBetween(etaGate, now);
 
-    var groundSpeedRequired;
+    let groundSpeedRequired;
 
     if (position) {
         currentLocation = new GeoLocation(position.coords.latitude, position.coords.longitude);
 
-        var distanceRemaining = Leg.updatePositionToActiveLeg(currentLocation);
-        var timeRemaining = Time.differenceBetween(etaGate, now);
-        var hours = timeRemaining.hours();
+        let distanceRemaining = Leg.updatePositionToActiveLeg(currentLocation);
+        let timeRemaining = Time.differenceBetween(etaGate, now);
+        let hours = timeRemaining.hours();
 
         if (hours > 0)
             groundSpeedRequired = distanceRemaining / hours;
@@ -2129,7 +2165,7 @@ function updateTimeAndPosition(position) {
         flightStatus.update(now, position, groundSpeedRequired);
 
     if (Leg.getCurrentLeg()) {
-        var currLeg = Leg.getCurrentLeg();
+        let currLeg = Leg.getCurrentLeg();
         currLeg.updateActuals(now);
         currLeg.redraw();
     }
@@ -2151,9 +2187,9 @@ var dbName = "RallyTrackerDB";
 
 function openDB()
 {
-    var _indexedDB = window._indexedDB || window.indexedDB || window.webkitIndexedDB;
-    var request = _indexedDB.open(dbName, 1);
-//    var request = _indexedDB.deleteDatabase(dbName, 1);
+    let _indexedDB = window._indexedDB || window.indexedDB || window.webkitIndexedDB;
+    let request = _indexedDB.open(dbName, 1);
+//    let request = _indexedDB.deleteDatabase(dbName, 1);
 
     request.onerror = function(event) {
         status("Could not open " + dbName + " IndexedDB");
@@ -2177,7 +2213,7 @@ function updateDBIfNeeded()
 
 function updateFAAObjectStore()
 {
-    var transaction = db.transaction("faaWaypoints", "readwrite");
+    let transaction = db.transaction("faaWaypoints", "readwrite");
 
 /*
     // report on the success of opening the transaction
@@ -2190,10 +2226,10 @@ function updateFAAObjectStore()
     };
 */
 
-    var faaWaypointOS = transaction.objectStore("faaWaypoints");
+    let faaWaypointOS = transaction.objectStore("faaWaypoints");
 
-    var faaRecordsLoaded = 0;
-    for (var i in faaWaypoints) {
+    let faaRecordsLoaded = 0;
+    for (let i in faaWaypoints) {
         faaWaypointOS.add(faaWaypoints);
         faaRecordsLoaded++;
     }
@@ -2209,36 +2245,43 @@ function updateFAAObjectStore()
 
 function createObjectStores()
 {
-    var faaWaypointOS = db.createObjectStore("faaWaypoints", { keyPath: "name" });
+    let faaWaypointOS = db.createObjectStore("faaWaypoints", { keyPath: "name" });
     faaWaypointOS.createIndex("type", "type", {unique: false });
 
-    var userWaypointOS = db.createObjectStore("userWaypoints", { keyPath: "name" });
+    let userWaypointOS = db.createObjectStore("userWaypoints", { keyPath: "name" });
 
-    var aircraftOS = db.createObjectStore("aircraft", { keyPath: "nNumber" });
+    let aircraftOS = db.createObjectStore("aircraft", { keyPath: "nNumber" });
 
-    var flightPlanOS = db.createObjectStore("flightPlans", { keyPath: "name" });
+    let flightPlanOS = db.createObjectStore("flightPlans", { keyPath: "name" });
     flightPlanOS.createIndex("description", "description", { unique: false });
 
-    var flightLogOS = db.createObjectStore("flightLogs", { keyPath: "dateFlown" });
+    let flightLogOS = db.createObjectStore("flightLogs", { keyPath: "dateFlown" });
     flightLogOS.createIndex("name", "name", { unique: false });
 
-    var faaRecordsLoaded = 0;
-    for (var i in faaWaypoints) {
-        faaWaypointOS.add(faaWaypoints[i]);
-        faaRecordsLoaded++;
+    let faaRecordsLoaded = 0;
+    for (let i in faaWaypoints) {
+        let request = faaWaypointOS.add(faaWaypoints[i]);
+        request.onsuccess = function(event) {
+            faaRecordsLoaded++;
+        }
     }
 
     status("Loaded FAA Records");
 
-    var userRecordsLoaded = 0;
-    for (var i in userWaypoints) {
-        userWaypointOS.add(userWaypoints[i]);
-        userRecordsLoaded++;
+    let userRecordsLoaded = 0;
+    for (let i in userWaypoints) {
+        let request = userWaypointOS.add(userWaypoints[i]);
+        request.onsuccess = function(event) {
+            userRecordsLoaded++;
+        }
     }
 
-    status("Loaded " + faaRecordsLoaded + " FAA records and " + userRecordsLoaded + " user records loaded");
-
     faaWaypointOS.transaction.oncomplete = function(event) {
+        status("Loaded " + faaRecordsLoaded + " FAA records and " + userRecordsLoaded + " user records loaded");    
+    };
+
+    faaWaypointOS.transaction.onerror = function(event) {
+        status("Failed to loaded FAA and user records!");    
     };
 }
 
@@ -2252,7 +2295,7 @@ function getWaypoints(waypoints)
 
 function getNextWaypoint()
 {
-    var nextWaypoint = "";
+    let nextWaypoint = "";
 
     while (waypointsToLookup.length) {
         nextWaypoint = waypointsToLookup.shift().trim();
@@ -2270,8 +2313,8 @@ function getNextWaypoint()
     else if (RallyLeg.isRallyLegWithoutFix(nextWaypoint))
         getRallyWaypointWithoutFix(nextWaypoint);
     else {
-        var fixName = RallyLeg.fixNeeded(nextWaypoint);
-        var isRallyWaypoint = false;
+        let fixName = RallyLeg.fixNeeded(nextWaypoint);
+        let isRallyWaypoint = false;
 
         if (fixName)
             isRallyWaypoint = true;
@@ -2284,8 +2327,8 @@ function getNextWaypoint()
 
 function getWaypoint(fixName, originalFix, isRallyWaypoint, user, callback)
 {
-    var transaction;
-    var waypointsObjectStore
+    let transaction;
+    let waypointsObjectStore
 
     if (user) {
         transaction = db.transaction(["userWaypoints"], "readonly");
@@ -2295,7 +2338,7 @@ function getWaypoint(fixName, originalFix, isRallyWaypoint, user, callback)
         waypointsObjectStore = transaction.objectStore("faaWaypoints");
     }
 
-    var request = waypointsObjectStore.get(fixName);
+    let request = waypointsObjectStore.get(fixName);
 
     request.onsuccess = function(event) {
         callback(fixName, originalFix, isRallyWaypoint, request.result);
@@ -2317,7 +2360,7 @@ function userWaypointResult(name, originalFix, isRallyWaypoint, waypoint)
 function waypointResult(name, originalFix, isRallyWaypoint, waypoint)
 {
     if (waypoint) {
-        var location = new GeoLocation(waypoint.latitude, waypoint.longitude);
+        let location = new GeoLocation(waypoint.latitude, waypoint.longitude);
 
         if (isRallyWaypoint)
             RallyLeg.appendLegWithFix(originalFix, name, location);
@@ -2338,9 +2381,9 @@ function getRallyWaypointWithoutFix(waypoint)
 
 function putUserWaypoint(waypoint, callback)
 {
-    var transaction = db.transaction(["userWaypoints"], "readwrite");
-    var waypointsObjectStore = transaction.objectStore("userWaypoints");
-    var request = waypointsObjectStore.put(waypoint);
+    let transaction = db.transaction(["userWaypoints"], "readwrite");
+    let waypointsObjectStore = transaction.objectStore("userWaypoints");
+    let request = waypointsObjectStore.put(waypoint);
 
     request.onsuccess = function(event) {
         callback(waypoint, request.result);
@@ -2353,9 +2396,9 @@ function putUserWaypoint(waypoint, callback)
 
 function selectElementContents(el)
 {
-    var range = document.createRange();
+    let range = document.createRange();
     range.selectNodeContents(el);
-    var sel = window.getSelection();
+    let sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
 }
@@ -2371,7 +2414,7 @@ function makeElementEditable(element, getCurrentValue, setNewValue, setIfValidVa
 
     element.addEventListener('keydown', function(event) {
         if (event.keyCode == 13 || event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192) {
-            var newTemp = parseInt(this.innerHTML);
+            let newTemp = parseInt(this.innerHTML);
             if (event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192) {
                 if (setNewValue)
                     setNewValue();
@@ -2386,7 +2429,7 @@ function makeElementEditable(element, getCurrentValue, setNewValue, setIfValidVa
 function makeOATElementEditable(element, getCurrentValue, setNewValue)
 {
     makeElementEditable(element, getCurrentValue, setNewValue, function(text) {
-        var newTemp = parseInt(text);
+        let newTemp = parseInt(text);
         if (newTemp > 0 && newTemp < 130)
             setNewValue(newTemp);
     }, function(keyCode) {
@@ -2397,7 +2440,7 @@ function makeOATElementEditable(element, getCurrentValue, setNewValue)
 function makeFuelElementEditable(element, getCurrentValue, setNewValue)
 {
     makeElementEditable(element, getCurrentValue, setNewValue, function(text) {
-        var newFuel = parseFloat(text);
+        let newFuel = parseFloat(text);
         if (newFuel >= 0.0 && newFuel <= 2000.0)
             setNewValue(newFuel);
     }, function(keyCode) {
@@ -2408,7 +2451,7 @@ function makeFuelElementEditable(element, getCurrentValue, setNewValue)
 function makePumpFactorElementEditable(element, getCurrentValue, setNewValue)
 {
     makeElementEditable(element, getCurrentValue, setNewValue, function(text) {
-        var newFuel = parseFloat(text);
+        let newFuel = parseFloat(text);
         if (newFuel >= 0.90 && newFuel <= 1.1)
             setNewValue(newFuel);
     }, function(keyCode) {
@@ -2427,6 +2470,51 @@ function showPopup(popupId, show)
     }
 }
 
+function showStartTimeAdjustPopup()
+{
+    if (flightStatus) {
+        let takeoffTime = flightStatus.getOriginalTakeoffTime();
+        document.getElementById("StartTimeAdjustPopup_orig").innerHTML = "Original Takeoff Time: " + takeoffTime.toTimeString().split(" ")[0];
+        let takeoffTimeTemp = new Date(takeoffTime.valueOf());
+        takeoffTimeTemp.setSeconds(0);
+        document.getElementById("StartTimeAdjustPopup_seconds0").innerHTML = "Even Minute Takeoff Time: " + takeoffTimeTemp.toTimeString().split(" ")[0];
+        takeoffTimeTemp.setSeconds(15);
+        document.getElementById("StartTimeAdjustPopup_seconds15").innerHTML = "Minute 15 Takeoff Time: " + takeoffTimeTemp.toTimeString().split(" ")[0];
+        takeoffTimeTemp.setSeconds(30);
+        document.getElementById("StartTimeAdjustPopup_seconds30").innerHTML = "Minute 30 Takeoff Time: " + takeoffTimeTemp.toTimeString().split(" ")[0];
+        takeoffTimeTemp.setSeconds(45);
+        document.getElementById("StartTimeAdjustPopup_seconds45").innerHTML = "Minute 45 Takeoff Time: " + takeoffTimeTemp.toTimeString().split(" ")[0];
+        showPopup('start-time-adjust-popup', true);
+    }
+}
+
+function restoreOriginalTakeoffTime()
+{
+    if (flightStatus) {
+        let origTakeoffTime = flightStatus.getOriginalTakeoffTime();
+        let newTakeoffTime = flightStatus.getTakeoffTime();
+        newTakeoffTime.setSeconds(origTakeoffTime.getSeconds());
+        Leg.updateStartLegTakeoffTime(newTakeoffTime);
+    }
+    hideStartTimeAdjustPopup();
+
+}
+
+function adjustStartTimeSeconds(sec)
+{
+    if (flightStatus) {
+        let newTakeoffTime = flightStatus.getTakeoffTime();;
+        newTakeoffTime.setSeconds(sec);
+        Leg.updateStartLegTakeoffTime(newTakeoffTime);
+    }
+    hideStartTimeAdjustPopup();
+}
+
+function hideStartTimeAdjustPopup()
+{
+    showPopup('start-time-adjust-popup', false);
+}
+
 function showUserWaypointPopup()
 {
     showPopup('user-waypoint-popup', true);
@@ -2439,12 +2527,18 @@ function createUserWaypointCallback(waypoint, result)
 
 function createUserWaypoint()
 {
-    var name = document.getElementById('UserWaypointPopup_name').value;
-    var type = "User";
-    var description = document.getElementById('UserWaypointPopup_description').value;
-    var latitude = decimalLatitudeFromString(document.getElementById('UserWaypointPopup_latitude').value);
-    var longitude = decimalLongitudeFromString(document.getElementById('UserWaypointPopup_longitude').value);
-    var waypoint = new Waypoint(name, type, description, latitude, longitude);
+    let name = document.getElementById('UserWaypointPopup_name').value;
+    if (name.length > maxWaypointNameLen)
+        name = name.substring(0, maxWaypointNameLen - 1);
+
+    let type = "User";
+    let description = document.getElementById('UserWaypointPopup_description').value;
+    if (description.length > maxWaypointDescLen)
+        description = description.substring(0, maxWaypointDescLen - 1);
+
+    let latitude = decimalLatitudeFromString(document.getElementById('UserWaypointPopup_latitude').value);
+    let longitude = decimalLongitudeFromString(document.getElementById('UserWaypointPopup_longitude').value);
+    let waypoint = new Waypoint(name, type, description, latitude, longitude);
     putUserWaypoint(waypoint, createUserWaypointCallback);
 }
 
@@ -2462,8 +2556,8 @@ function showRoutePopup()
     if (state.isRunning())
         return;
 
-    var routeElem = document.getElementById('routePopup_route');
-    var existingRoute = Leg.currentRoute();
+    let routeElem = document.getElementById('routePopup_route');
+    let existingRoute = Leg.currentRoute();
 /*
     if (!existingRoute)
         existingRoute = "OILCAMP I5.WESTSHIELDS I5.165 I5.VOLTA PT.ALPHA";
@@ -2480,8 +2574,8 @@ function cancelRoutePopup()
 function submitRoutePopup()
 {
     Leg.removeAll();
-    var routeElem = document.getElementById('routePopup_route');
-    var routeString = routeElem.value;
+    let routeElem = document.getElementById('routePopup_route');
+    let routeString = routeElem.value;
     routeString = routeString.trim().toUpperCase();
     getWaypoints(routeString);
     cancelRoutePopup();
@@ -2489,7 +2583,7 @@ function submitRoutePopup()
 
 function showGroundSpeedPopup()
 {
-    var gsElem = document.getElementById('GroundSpeedPopup_gs');
+    let gsElem = document.getElementById('GroundSpeedPopup_gs');
     gsElem.value = EngineConfig.currentTAS();
     showPopup('gs-popup', true);
 }
@@ -2501,7 +2595,7 @@ function cancelGroundSpeedPopup()
 
 function submitGroundSpeedPopup()
 {
-    var gs = document.getElementById('GroundSpeedPopup_gs').value;
+    let gs = document.getElementById('GroundSpeedPopup_gs').value;
     gs = Number(gs);
     if (gs > 0)
         Leg.setGroundSpeed(gs);
@@ -2515,7 +2609,7 @@ function showEditTASPopup(leg)
         return;
 
     legEditing = leg;
-    var tasElem = document.getElementById('EditTASPopup_tas');
+    let tasElem = document.getElementById('EditTASPopup_tas');
     tasElem.value = leg.estTAS;
     showPopup('tas-popup', true);
 }
@@ -2527,7 +2621,7 @@ function cancelEditTASPopup()
 
 function submitEditTASPopup()
 {
-    var tas = document.getElementById('EditTASPopup_tas').value;
+    let tas = document.getElementById('EditTASPopup_tas').value;
     tas = Number(tas);
     if (tas > 0) {
         legEditing.estTAS = tas;
@@ -2544,9 +2638,9 @@ function showWindPopup(leg)
         return;
 
     legEditing = leg;
-    var windDirectionElem = document.getElementById('WindPopup_direction');
+    let windDirectionElem = document.getElementById('WindPopup_direction');
     windDirectionElem.value = leg.windDirection;
-    var windSpeedElem = document.getElementById('WindPopup_speed');
+    let windSpeedElem = document.getElementById('WindPopup_speed');
     windSpeedElem.value = leg.windSpeed;
     showPopup('wind-popup', true);
 }
@@ -2558,8 +2652,8 @@ function cancelWindPopup()
 
 function submitWindPopup()
 {
-    var windChanged = false;
-    var windDirection = document.getElementById('WindPopup_direction').value;
+    let windChanged = false;
+    let windDirection = document.getElementById('WindPopup_direction').value;
     if (windDirection) {
         windDirection = parseInt(windDirection);
         if (windDirection >= 0 && windDirection <= 360) {
@@ -2568,7 +2662,7 @@ function submitWindPopup()
         }
     }
 
-    var windSpeed = document.getElementById('WindPopup_speed').value;
+    let windSpeed = document.getElementById('WindPopup_speed').value;
     if (windSpeed) {
         windSpeed = parseInt(windSpeed);
         legEditing.windSpeed = windSpeed;
@@ -2587,6 +2681,7 @@ function startRunning()
 {
     if (Leg.haveRoute() && !state.isRunning()) {
         startTime = new Date();
+        startTime.setMilliseconds(0);  // Round to the prior whole second.
         if (flightStatus)
             flightStatus.resetActualFuelForFlight();
         legStartTime = startTime;
@@ -2594,7 +2689,7 @@ function startRunning()
         Leg.resetCurrentLeg();
         Leg.start(startTime);
         Leg.getFirstLeg().scrollToTop();
-        var currLeg = Leg.getCurrentLeg();
+        let currLeg = Leg.getCurrentLeg();
         currLeg.startTime = legStartTime;
         etaWaypoint = currLeg.ete.addDate(startTime);
     }
@@ -2603,12 +2698,13 @@ function startRunning()
 function markLeg()
 {
     if (state.isRunning()) {
-        var now = new Date();
-        var topLegToView = Leg.getCurrentLeg();
+        let now = new Date();
+        now.setMilliseconds(0);  // &&&& Should we round to nearest?
+        let topLegToView = Leg.getCurrentLeg();
         Leg.markCurrentLeg(false, now)
         topLegToView.scrollToTop();
         if (state.isRunning()) {
-            var leg = Leg.getCurrentLeg();
+            let leg = Leg.getCurrentLeg();
             etaWaypoint = leg.ete.addDate(now);
         }
     }

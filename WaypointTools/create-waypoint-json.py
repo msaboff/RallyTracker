@@ -7,7 +7,7 @@ import re
 latLongRE = re.compile('\s*(\d+)-(\d{2})-(\d{2}.\d{3,8})([NS])\s*(\d+)-(\d{2})-(\d{2}.\d{3,8})([EW])')
 statesToInclude = ['CALIFORNIA', 'IDAHO', 'OREGON', 'WASHINGTON', 'NEVADA', 'ARIZONA']
 statesAbbreviationsToInclude = ['CA', 'ID', 'OR', 'WA', 'NV', 'AZ']
-navaidsToInclude = ['VOR', 'NDB']
+navaidsToInclude = ['VOR']  # Don't include NDB's because there are duplicates with VOR names.
 
 class WaypointData:
     def __init__(self):
