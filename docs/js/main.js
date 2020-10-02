@@ -7,7 +7,7 @@ function status(msg)
     statusElement.innerHTML = msg;
 }
 
-var maxWaypointNameLen = 12;
+var maxWaypointNameLen = 15;
 var maxWaypointDescLen = 35;
 
 var metersPerSecToMPH = 2.23694;
@@ -18,9 +18,11 @@ var metersToNauticalMiles = 0.000539957;
 var radiusOfEarthInMiles = 3959;
 var radiusOfEarthInNauticalMiles = 3440;
 var earthRadius = radiusOfEarthInNauticalMiles;
-var magneticVariation = -14;
+var magneticVariation = -14;  // Whole lot easier than a variation model!
 var useMiles = false;
-var fuelCompFarenheit = 0.00056;
+var fuelCompPerDegreeFarenheit = 0.00056;
+var timePointsPerSecond = 1.5;
+var fuelPointsPerPercentError = 30;
 
 var currentLocation = null;
 var waypointsTableElement = null;
@@ -865,7 +867,7 @@ class FlightStatus
             this.timeToWaypointElement.innerHTML = etaWaypoint.toTimeString().split(" ")[0];
         if (etaGate instanceof Date) {
             this.timeToGateElement.innerHTML = etaGate.toTimeString().split(" ")[0];
-            this.timePointsElement.innerHTML = Math.abs(deltaTime.seconds()) * 3;
+            this.timePointsElement.innerHTML = Math.abs(deltaTime.seconds()) * timePointsPerSecond;
         }
         this.deltaTimeElement.innerHTML = deltaTime ? deltaTime.toString() : "";
         this.fuelUsedElement.innerHTML = this._fuelUsed.toFixed(3);
@@ -884,7 +886,7 @@ class FlightStatus
             let totalFuel = fuelPumped - fuelVector;
             let fuelPoints = 0;
             if (submittedFuel > 0)
-                fuelPoints = Math.abs(totalFuel - submittedFuel) / submittedFuel * 3000;
+                fuelPoints = Math.abs(totalFuel - submittedFuel) / submittedFuel * 100 * fuelPointsPerPercentError;
 
             this.updateFuelMeter(fuelMeter, true);
             this.updatePumpFactor(1.0, true);
@@ -915,7 +917,7 @@ class Waypoint
 {
     constructor(name, type, description, latitude, longitude)
     {
-        this.name = name;
+        this.name = name.trim().toUpperCase();
         this.type = type;
         this.description = description;
         this.latitude = latitude;
@@ -1223,7 +1225,7 @@ class Leg
 
         if (flightStatus) {
             let previousOAT = previousLeg ? previousLeg.oat : flightStatus.fillOAT();
-            this.compFuel = (previousOAT - this.oat) * fuelCompFarenheit * (flightStatus.startFuel() - this.actCummulativeFuel);
+            this.compFuel = (previousOAT - this.oat) * fuelCompPerDegreeFarenheit * (flightStatus.startFuel() - this.actCummulativeFuel);
             let priorFuelUsed = previousLeg ? previousLeg.fuelUsed : 0;
             this.fuelUsed = priorFuelUsed + this.actFuel + this.compFuel;
             flightStatus.updateFuelUsed(this.fuelUsed);
@@ -2546,8 +2548,32 @@ function createUserWaypoint()
     putUserWaypoint(waypoint, createUserWaypointCallback);
 }
 
+function editUserWaypointLookupResult(name, originalFIx, isRallyWaypoint, waypoint)
+{
+    document.getElementById('UserWaypointPopup_name').value = name;
+
+    if (!waypoint) {
+        status("Could not find User waypoint named \"" + name +"\"");
+        document.getElementById('UserWaypointPopup_description').value = "";
+        document.getElementById('UserWaypointPopup_latitude').value = "";
+        document.getElementById('UserWaypointPopup_longitude').value = "";
+        return;
+    }
+
+    document.getElementById('UserWaypointPopup_description').value = waypoint.description ? waypoint.description : "";
+    document.getElementById('UserWaypointPopup_latitude').value = waypoint.latitude;
+    document.getElementById('UserWaypointPopup_longitude').value = waypoint.longitude;
+}
+
 function editUserWaypoint()
 {
+    let name = document.getElementById('UserWaypointPopup_name').value;
+    if (name.length > maxWaypointNameLen)
+        name = name.substring(0, maxWaypointNameLen - 1);
+
+    name = name.trim().toUpperCase();
+
+    getWaypoint(name, undefined, false,  true, editUserWaypointLookupResult);
 }
 
 function hideUserWaypointPopup()
