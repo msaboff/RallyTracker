@@ -21,6 +21,11 @@
     font-size: 85%;
 }
 
+#CessnaCruisePerf td {
+    text-align: right;
+    vertical-align: middle;
+}
+
 table, th, td {
     border: 1px solid black;
 }
@@ -96,6 +101,10 @@ tr:hover {
 
 .config-row:nth-child(even) {
     background-color: Azure;
+}
+
+.centered-cell {
+    text-align: center;
 }
 
 .status-center {

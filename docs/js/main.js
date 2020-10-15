@@ -481,6 +481,16 @@ class EngineConfig
         this.allConfigs[this.currentConfig].select();
     }
 
+    static setConfigName(aircraft)
+    {
+        document.getElementById("engine-config-name").innerHTML = aircraft + " Config";
+    }
+
+    static selectPowerUnits(label)
+    {
+        document.getElementById("engine-config-power").innerHTML = label;
+    }
+
     static currentTAS()
     {
         return this.allConfigs[this.currentConfig]._trueAirspeed;
@@ -490,12 +500,13 @@ class EngineConfig
 EngineConfig.allConfigs = [];
 EngineConfig.allConfigsByType = {};
 EngineConfig.currentConfig = 0;
-EngineConfig.ColdTaxi = 0;
+EngineConfig.Taxi = 0;
 EngineConfig.WarmTaxi = 1;
-EngineConfig.Runup = 2;
-EngineConfig.Takeoff = 3;
-EngineConfig.Climb = 4;
-EngineConfig.Cruise = 5;
+EngineConfig.Runup = 1;
+EngineConfig.Takeoff = 2;
+EngineConfig.Climb = 3;
+EngineConfig.Cruise = 4;
+EngineConfig.LowCruise = 5;
 EngineConfig.Pattern= 6;
 
 class FlightStatus
@@ -1653,7 +1664,7 @@ class Leg
             } else {
                 this.currentLegIndex = 0;
                 this.currentLeg = undefined;
-                EngineConfig.selectConfig(EngineConfig.ColdTaxi);
+                EngineConfig.selectConfig(EngineConfig.Taxi);
                 state.clearRunning();
             }
         }
@@ -1838,7 +1849,7 @@ class StartLeg extends RallyLeg
 {
     constructor(fixText, fix, location)
     {
-        super("Start", fix, location, EngineConfig.ColdTaxi);
+        super("Start", fix, location, EngineConfig.Taxi);
     }
 
     fixName()
@@ -1870,9 +1881,7 @@ class TaxiLeg extends RallyLeg
     {
         let match = fixText.match(TaxiLegRE);
 
-        let engineConfig = (match[1] && match[1].toString().toUpperCase() == "COLD")
-            ? EngineConfig.ColdTaxi
-            : EngineConfig.WarmTaxi;
+        let engineConfig = EngineConfig.Taxi;
         super("Taxi", "", new GeoLocation(-1, -1), engineConfig);
 
         let taxiTimeString = "5:00";
@@ -1888,11 +1897,7 @@ class TaxiLeg extends RallyLeg
 
     fixName()
     {
-        let coldWarm = "Warm";
-        if (this.engineConfig == EngineConfig.ColdTaxi)
-            coldWarm = "Cold";
-
-        return "Taxi|" + coldWarm + "|" + this.ete.toString();
+        return "Taxi|" + this.ete.toString();
     }
 }
 
@@ -2581,6 +2586,38 @@ function hideUserWaypointPopup()
     showPopup('user-waypoint-popup', false);
 }
 
+function showCalcRPMFromPercentHPPopup()
+{
+    showPopup('calc-rpm-from-percent-powerpopup', true);
+}
+
+function calculateRPM()
+{
+    const rpm65PctAt6000 = 2500;
+
+    let pressureAltStr = document.getElementById('CalcRPMFromPctPowerPopup_pressureAlt').value;
+    let oatFStr = document.getElementById('CalcRPMFromPctPowerPopup_OAT').value;
+    let percentHPStr = document.getElementById('CalcRPMFromPctPowerPopup_percentHP').value;
+
+    let pressureAlt = parseInt(pressureAltStr);
+    let oatF = parseFloat(oatFStr);
+    let percentHP = parseInt(percentHPStr);
+
+    let standardTempF = 59 - (3.564 * pressureAlt / 1000);
+    let densityAlt = pressureAlt + (66.667 * (oatF - standardTempF));
+
+    let calcRPM = Math.round(rpm65PctAt6000 + (0.03 * (densityAlt - 6000)) - (65 - percentHP) / 0.06);
+
+    document.getElementById("CalcRPMFromPctPowerPopup_calcRPM").innerHTML = calcRPM;
+    document.getElementById("CalcRPMFromPctPowerPopup_calcStdTemp").innerHTML = Number(standardTempF).toFixed(1) + "&deg;F";
+    document.getElementById("CalcRPMFromPctPowerPopup_calcDensityAlt").innerHTML = Math.round(densityAlt);
+}
+
+function hideCalcRPMPopup()
+{
+    showPopup('calc-rpm-from-percent-powerpopup', false);
+}
+
 function showRoutePopup()
 {
     if (state.isRunning())
@@ -2762,26 +2799,30 @@ function init()
 
 function start()
 {
+    /*
     // Bonanza configuration
-    EngineConfig.appendConfig("Cold Taxi", 1000, "Rich", 2.45, 0); // Was 2.10
-    EngineConfig.appendConfig("Warm Taxi", 1000, "Rich", 2.45, 0); // Was 1.85
+    EngineConfig.setConfigName("N7346R");
+    EngineConfig.appendConfig("Taxi", 1000, "Rich", 2.45, 0); // Was 2.10
     EngineConfig.appendConfig("Runup", 1800, "Rich", 6.75, 0); // Was 5.79
     EngineConfig.appendConfig("Takeoff", 2700, "Rich", 26.57, 105); // Was 26.09
     EngineConfig.appendConfig("Climb", 2500, 25, 21.85, 125); // Was 21.07
     EngineConfig.appendConfig("Cruise", 2400, 20, 14.18, 142); // Was 14.12
+    EngineConfig.appendConfig("Low Cruise", 2400, 20, 14.18, 142); // Was 14.12
     EngineConfig.appendConfig("Pattern", 2700, 15, 11.13, 95); // Was 7.80
-    EngineConfig.selectConfig(EngineConfig.ColdTaxi);
-
-/*  // Cessna configuration
-    EngineConfig.appendConfig("Cold Taxi", 1000, 0, 1.5, 0);
-    EngineConfig.appendConfig("Warm Taxi", 1000, 0, 1.5, 0);
-    EngineConfig.appendConfig("Runup", 1800, 0, 4.0, 0);
-    EngineConfig.appendConfig("Takeoff", 2700, 0, 10.09, 80);
-    EngineConfig.appendConfig("Climb", 2500, 0, 9.00, 90);
-    EngineConfig.appendConfig("Cruise", 2400, 0, 8.0, 110);
-    EngineConfig.appendConfig("Pattern", 2700, 0, 5.5, 75);
-    EngineConfig.selectConfig(5);
+    EngineConfig.selectConfig(EngineConfig.Taxi);
 */
+
+    // Cessna configuration
+    EngineConfig.setConfigName("N80377");
+    EngineConfig.appendConfig("Taxi", 1000, "20%", 1.50, 0);
+    EngineConfig.appendConfig("Runup", 1800, "40%", 4.00, 0);
+    EngineConfig.appendConfig("Takeoff", 2700, "100%", 10.09, 80);
+    EngineConfig.appendConfig("Climb", 2500, "80%", 9.00, 90);
+    EngineConfig.appendConfig("Cruise", 2400, "65%", 8.00, 110);
+    EngineConfig.appendConfig("Low Cruise", 2000, "40%", 5.50, 90);
+    EngineConfig.appendConfig("Pattern", 1800, "40%", 5.00, 75);
+    EngineConfig.selectConfig(EngineConfig.Taxi);
+    EngineConfig.selectPowerUnits("%HP");
 
     startLocationUpdates();
     installOnFocusHandler();
