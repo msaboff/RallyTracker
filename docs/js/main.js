@@ -936,7 +936,7 @@ class Waypoint
     }
 }
 
-var LegModifier = new RegExp("(360|3[0-5][0-9]|[0-2][0-9]{2}|[0-9]{1,2})@([0-9]{1,3})|([1-9][0-9]{1,2})kts", "i");
+var LegModifier = new RegExp("(360|3[0-5][0-9]|[0-2][0-9]{2}|[0-9]{1,2})@([0-9]{1,3})|(?:([1-9][0-9]{1,2})kts)|(:(?:LOW-)?CRUISE)", "i");
 
 class Leg
 {
@@ -947,7 +947,7 @@ class Leg
         this.location = location;
         this.startFlightTiming = false;
         this.stopFlightTiming = false;
-        this.engineConfig = EngineConfig.Cruise;
+        this.engineConfig = Leg.lowCruiseOverride ? EngineConfig.LowCruise : EngineConfig.Cruise;
         this.distance = 0;
         this.legDistance = 0;
         this.distanceRemaining = 0;
@@ -1141,10 +1141,16 @@ class Leg
         this.tasOverride = tas;
     }
 
+    static setLowCruiseOverride(enable)
+    {
+        this.lowCruiseOverride = enable;
+    }
+
     static resetModifiers()
     {
         this.setDefaultWind(0, 0);
         this.setTASOverride(undefined);
+        this.setLowCruiseOverride(false);
     }
 
     static isLegModifier(fix)
@@ -1165,7 +1171,8 @@ class Leg
             } else if (match[3]) {
                 let tas = parseInt(match[3].toString());
                 Leg.setTASOverride(tas);
-            }
+            } else if (match[4])
+                Leg.setLowCruiseOverride(match[4].toUpperCase() == ":LOW-CRUISE");
 
             setTimeout(getNextWaypoint(), 0);
         }
@@ -1576,6 +1583,7 @@ class Leg
         let result = "";
         let lastWindDirection = 0;
         let lastWindSpeed = 0;
+        let lastLegEngineConfig = EngineConfig.Cruise;
 
         for (let i = 0; i < this.allLegs.length; i++) {
             let currentLeg = this.allLegs[i];
@@ -1592,6 +1600,15 @@ class Leg
 
             if (!currentLeg.isStandardTAS())
                 result = result + currentLeg.estTASToString() + " ";
+
+            if (currentLeg.engineConfig != lastLegEngineConfig) {
+                if (currentLeg.engineConfig == EngineConfig.LowCruise)
+                    result = result + ":LOW-CRUISE ";
+                else if (currentLeg.engineConfig == EngineConfig.Cruise)
+                    result = result + ":CRUISE ";
+                lastLegEngineConfig = currentLeg.engineConfig;
+
+            }
 
             result = result + currentLeg.toString();
         }
@@ -1678,6 +1695,7 @@ Leg.currentLeg = undefined;
 Leg.defaultWindDirection = 0;
 Leg.defaultWindSpeed = 0;
 Leg.tasOverride = undefined;
+Leg.lowCruiseOverride = false;
 
 Leg.cellCount = 24;
 // Top row: Waypoint | Lat  | Leg Dist | TAS | WindDir@WindSpd | Est GS | ETE |  ETR | Fuel Flow | Est Fuel | ECF | Comp
@@ -1862,7 +1880,7 @@ class TimingLeg extends RallyLeg
 {
     constructor(fixText, fix, location)
     {
-        super("Timing", fix, location, EngineConfig.Cruise);
+        super("Timing", fix, location, EngineConfig.LowCruise);
         this.stopFlightTiming = true;
     }
 
@@ -2814,12 +2832,12 @@ function start()
 
     // Cessna configuration
     EngineConfig.setConfigName("N80377");
-    EngineConfig.appendConfig("Taxi", 1000, "20%", 1.50, 0);
-    EngineConfig.appendConfig("Runup", 1800, "40%", 4.00, 0);
+    EngineConfig.appendConfig("Taxi", 1000, "20%", 1.20, 0);
+    EngineConfig.appendConfig("Runup", 1800, "40%", 3.50, 0);
     EngineConfig.appendConfig("Takeoff", 2700, "100%", 10.09, 80);
-    EngineConfig.appendConfig("Climb", 2500, "80%", 9.00, 90);
-    EngineConfig.appendConfig("Cruise", 2400, "65%", 8.00, 110);
-    EngineConfig.appendConfig("Low Cruise", 2000, "40%", 5.50, 90);
+    EngineConfig.appendConfig("Climb", 2500, "80%", 9.00, 85);
+    EngineConfig.appendConfig("Cruise", 2400, "65%", 7.70, 100);
+    EngineConfig.appendConfig("Low Cruise", 2000, "40%", 5.30, 80);
     EngineConfig.appendConfig("Pattern", 1800, "40%", 5.00, 75);
     EngineConfig.selectConfig(EngineConfig.Taxi);
     EngineConfig.selectPowerUnits("%HP");
