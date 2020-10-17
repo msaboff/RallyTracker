@@ -2832,13 +2832,13 @@ function start()
 
     // Cessna configuration
     EngineConfig.setConfigName("N80377");
-    EngineConfig.appendConfig("Taxi", 1000, "20%", 1.20, 0);
+    EngineConfig.appendConfig("Taxi", 1000, "20%", 1.40, 0);
     EngineConfig.appendConfig("Runup", 1800, "40%", 3.50, 0);
-    EngineConfig.appendConfig("Takeoff", 2700, "100%", 10.09, 80);
-    EngineConfig.appendConfig("Climb", 2500, "80%", 9.00, 85);
-    EngineConfig.appendConfig("Cruise", 2400, "65%", 7.70, 100);
-    EngineConfig.appendConfig("Low Cruise", 2000, "40%", 5.30, 80);
-    EngineConfig.appendConfig("Pattern", 1800, "40%", 5.00, 75);
+    EngineConfig.appendConfig("Takeoff", 2700, "100%", 8.90, 85);
+    EngineConfig.appendConfig("Climb", 2500, "80%", 8.90, 85);
+    EngineConfig.appendConfig("Cruise", 2400, "65%", 6.70, 100);
+    EngineConfig.appendConfig("Low Cruise", 2000, "40%", 5.40, 75);
+    EngineConfig.appendConfig("Pattern", 1800, "40%", 5.40, 75);
     EngineConfig.selectConfig(EngineConfig.Taxi);
     EngineConfig.selectPowerUnits("%HP");
 
