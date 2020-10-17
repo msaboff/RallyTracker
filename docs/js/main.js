@@ -527,7 +527,7 @@ class FlightStatus
         this._origTakeoffTime = undefined;
         this._submittedTime = undefined;
         this._submittedFuel = undefined;
-        this._startFuel = 80;
+        this._startFuel = 38;
         this._fillOAT = 72;
         this._fuelUsed = 0;
         this._fuelMeter = undefined;
@@ -2837,8 +2837,8 @@ function start()
     EngineConfig.appendConfig("Takeoff", 2700, "100%", 8.90, 85);
     EngineConfig.appendConfig("Climb", 2500, "80%", 8.90, 85);
     EngineConfig.appendConfig("Cruise", 2400, "65%", 6.70, 100);
-    EngineConfig.appendConfig("Low Cruise", 2000, "40%", 5.40, 75);
-    EngineConfig.appendConfig("Pattern", 1800, "40%", 5.40, 75);
+    EngineConfig.appendConfig("Low Cruise", 2000, "45%", 5.40, 75);
+    EngineConfig.appendConfig("Pattern", 1800, "45%", 5.40, 75);
     EngineConfig.selectConfig(EngineConfig.Taxi);
     EngineConfig.selectPowerUnits("%HP");
 
