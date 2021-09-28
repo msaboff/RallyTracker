@@ -2826,8 +2826,8 @@ function start()
     EngineConfig.appendConfig("Cruise", 2400, 20, 14.18, 142); // Was 14.12
     EngineConfig.appendConfig("Low Cruise", 2400, 20, 14.18, 142); // Was 14.12
     EngineConfig.appendConfig("Pattern", 2700, 15, 11.13, 95); // Was 7.80
-    EngineConfig.selectPowerUnits("MP");
     EngineConfig.selectConfig(EngineConfig.Taxi);
+    EngineConfig.selectPowerUnits("MP");
 
 /*
     // Cessna configuration
