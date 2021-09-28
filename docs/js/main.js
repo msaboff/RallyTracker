@@ -527,7 +527,7 @@ class FlightStatus
         this._origTakeoffTime = undefined;
         this._submittedTime = undefined;
         this._submittedFuel = undefined;
-        this._startFuel = 38;
+        this._startFuel = 74;
         this._fillOAT = 72;
         this._fuelUsed = 0;
         this._fuelMeter = undefined;
