@@ -1,6 +1,6 @@
 # This parses the APT.txt, NAV.txt and FIX.txt files loaded from the FAA database downloaded from
-# https://nfdc.faa.gov/xwiki/bin/view/NFDC/56+Day+NASR+Subscription
-# Run this file on the unzipped driectory that is downloaded.
+# https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/year-mon-datt
+# Run this file on the unzipped directory that is downloaded.
 
 import re
 
