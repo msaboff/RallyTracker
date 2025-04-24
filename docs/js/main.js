@@ -541,7 +541,8 @@ class FlightStatus
         // First row
         this.latitudeElement = document.getElementById("currentLatitude");
         this.speedElement = document.getElementById("currentSpeed");
-        this.requiredGSElement = document.getElementById("requiredGS");
+        this.requiredGateGSElement = document.getElementById("requiredGateGS");
+        this.requiredWPGSElement = document.getElementById("requiredWPGS");
         this.headingElement = document.getElementById("currentHeading");
         this.accuracyElement = document.getElementById("currentAccuracy");
         this.timestampElement = document.getElementById("currentTimeStamp");
@@ -557,7 +558,8 @@ class FlightStatus
         // Second row
         this.longitudeElement = document.getElementById("currentLongitude");
         this.averageSpeedElement = document.getElementById("averageSpeed");
-        this.deltaGSElement = document.getElementById("deltaGS");
+        this.deltaGateGSElement = document.getElementById("deltaGateGS");
+        this.deltaWPGSElement = document.getElementById("deltaWPGS");
         this.altitudeElement = document.getElementById("currentAltitude");
         this.distanceToWaypointElement = document.getElementById("distanceToWaypoint");
         this.currentTimeElement = document.getElementById("currentTime");
@@ -821,7 +823,7 @@ class FlightStatus
         this.fuelPointsElement.innerHTML = (points == undefined) ? "" : points.toFixed(0);
     }
 
-    update(now, position, requiredSpeed)
+    update(now, position, requiredSpeeds)
     {
         if (position) {
             var location = new GeoLocation(position.coords.latitude, position.coords.longitude);
@@ -837,27 +839,49 @@ class FlightStatus
             }
             let averageSpeed = 0;
             let numberSpeeds = this.recentGroundSpeeds.length;
+            let requiredGateSpeed = requiredSpeeds.gate;
+            let requiredLegSpeed = requiredSpeeds.leg;
+
             for (let i = 0; i < numberSpeeds; i++)
                 averageSpeed += this.recentGroundSpeeds[i];
             averageSpeed = averageSpeed / numberSpeeds;
             currentAvgGS = averageSpeed;
             this.averageSpeedElement.innerHTML = averageSpeed.toFixed(1);
-            if (typeof requiredSpeed == "string") {
-                this.requiredGSElement.innerHTML = requiredSpeed;
-                this.deltaGSElement.innerHTML = "";
-                this.deltaGSElement.className = "status-center";
+
+            if (typeof requiredGateSpeed == "string") {
+                this.requiredGateGSElement.innerHTML = requiredGateSpeed;
+                this.deltaGateGSElement.innerHTML = "";
+                this.deltaGateGSElement.className = "status-center";
             } else {
-                this.requiredGSElement.innerHTML = requiredSpeed.toFixed(1);
-                let deltaGS = currentSpeed - requiredSpeed;
-                if (deltaGS > 1.0) {
-                    this.deltaGSElement.className = "status-center delta-speed-ahead";
-                } else if (deltaGS < -1.0) {
-                    this.deltaGSElement.className = "status-center delta-speed-behind";
+                this.requiredGateGSElement.innerHTML = requiredGateSpeed.toFixed(1);
+                let deltaGateGS = currentSpeed - requiredGateSpeed;
+                if (deltaGateGS > 1.0) {
+                    this.deltaGateGSElement.className = "status-center delta-speed-ahead";
+                } else if (deltaGateGS < -1.0) {
+                    this.deltaGateGSElement.className = "status-center delta-speed-behind";
                 } else {
-                    this.deltaGSElement.className = "status-center delta-speed-close";
+                    this.deltaGateGSElement.className = "status-center delta-speed-close";
                 }
-                this.deltaGSElement.innerHTML = deltaGS.toFixed(1);
+                this.deltaGateGSElement.innerHTML = deltaGateGS.toFixed(1);
             }
+
+            if (typeof requiredLegSpeed == "string") {
+                this.requiredWPGSElement.innerHTML = requiredLegSpeed;
+                this.deltaWPGSElement.innerHTML = "";
+                this.deltaWPGSElement.className = "status-center";
+            } else {
+                this.requiredWPGSElement.innerHTML = requiredLegSpeed.toFixed(1);
+                let deltaWPGS = currentSpeed - requiredLegSpeed;
+                if (deltaWPGS > 1.0) {
+                    this.deltaWPGSElement.className = "status-center delta-speed-ahead";
+                } else if (deltaWPGS < -1.0) {
+                    this.deltaWPGSElement.className = "status-center delta-speed-behind";
+                } else {
+                    this.deltaWPGSElement.className = "status-center delta-speed-close";
+                }
+                this.deltaWPGSElement.innerHTML = deltaWPGS.toFixed(1);
+            }
+
             let heading = "";
             if (position.coords.heading) {
                 let headingVal = Math.round(position.coords.heading + magneticVariation);
@@ -1481,12 +1505,20 @@ class Leg
 
     static updatePositionToActiveLeg(currentLocation)
     {
+        let distances = {
+            leg: 0,
+            gate: 0,
+        };
+
         if (this.allLegs.length && this.currentLeg) {
             this.currentLeg.updateDistanceAndBearing(currentLocation);
             distanceToWaypoint = this.currentLeg.distance;
-            return this.currentLeg.distance + this.currentLeg.distanceRemainingAfterThisLeg;
+
+            distances.leg = this.currentLeg.distance;
+            distances.gate = this.currentLeg.distance + this.currentLeg.distanceRemainingAfterThisLeg;
         }
-        return 0;
+
+        return distances;
     }
 
     static updateIndecies()
@@ -2099,14 +2131,20 @@ var geolocationOptions = {
 
 var watchPositionID = 0;
 var flightStatus = null;
+var postedLocationError = false;
 
 function startLocationUpdates()
 {
     if (navigator.geolocation) {
         try {
             watchPositionID = navigator.geolocation.watchPosition(updateTimeAndPosition, showGeolocationError, geolocationOptions);
+            if (postedLocationError) {
+                status("");
+                postedLocationError = false;
+            }
         } catch(e) {
             status("geolocation.watchPosition error: " + e);
+            postedLocationError = true;
         }
     } else
         status("Geolocation is not supported by this browser.");
@@ -2126,6 +2164,7 @@ function installOnFocusHandler()
 }
 
 function showGeolocationError(error) {
+    postedLocationError = true;
     switch(error.code) {
     case error.PERMISSION_DENIED:
         status("User denied the request for Geolocation.");
@@ -2170,24 +2209,34 @@ function updateTimeAndPosition(position) {
     if (state.isTiming())
         deltaTime = Time.differenceBetween(etaGate, now);
 
-    let groundSpeedRequired;
+    let requiredSpeeds = {
+        leg: undefined,
+        gate: undefined,
+    };
 
     if (position) {
         currentLocation = new GeoLocation(position.coords.latitude, position.coords.longitude);
 
-        let distanceRemaining = Leg.updatePositionToActiveLeg(currentLocation);
-        let timeRemaining = Time.differenceBetween(etaGate, now);
-        let hours = timeRemaining.hours();
+        let distances = Leg.updatePositionToActiveLeg(currentLocation);
+        let gateTimeRemaining = Time.differenceBetween(etaGate, now);
+        let gateHours = gateTimeRemaining.hours();
 
-        if (hours > 0)
-            groundSpeedRequired = distanceRemaining / hours;
+        if (gateHours > 0)
+            requiredSpeeds.gate = distances.gate / gateHours;
         else
-            groundSpeedRequired = "Inf";
-    } else
-        groundSpeedRequired = undefined;
+            requiredSpeeds.gate = "Inf";
+
+        let legTimeRemaining = Time.differenceBetween(etaWaypoint, now);
+        let legHours = legTimeRemaining.hours();
+
+        if (legHours > 0)
+            requiredSpeeds.leg = distances.leg / legHours;
+        else
+            requiredSpeeds.leg = "Inf";
+    }
 
     if (flightStatus)
-        flightStatus.update(now, position, groundSpeedRequired);
+        flightStatus.update(now, position, requiredSpeeds);
 
     if (Leg.getCurrentLeg()) {
         let currLeg = Leg.getCurrentLeg();
