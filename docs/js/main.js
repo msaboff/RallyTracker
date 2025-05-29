@@ -596,7 +596,7 @@ class FlightStatus
                                 function() { return flightStatus.fuelMeter(); },
                                 function(newFuel) {
                                     if (!state.isRunning())
-                                        flightStatus.updateFuelMeter(newFuel);
+                                        flightStatus.updateFuelMeter(newFuel, false);
                                 });
 
         makeFuelElementEditable(this.fuelVectorElement,
@@ -609,8 +609,7 @@ class FlightStatus
         makePumpFactorElementEditable(this.pumpFactorElement,
                                       function() { return flightStatus.pumpFactor(); },
                                       function(newFactor) {
-                                          if (!state.isRunning())
-                                              flightStatus.updatePumpFactor(newFactor);
+                                          flightStatus.updatePumpFactor(newFactor);
                                       });
 
         this.submittedTimeElement.contentEditable = true;
@@ -622,6 +621,7 @@ class FlightStatus
         this.updateFillOAT();
         this.updateStartFuel();
         this.updateActualFuel();
+        this.updatePumpFactor(this.pumpFactor(), true);
     }
 
     getFeetOrNull(meters)
@@ -664,7 +664,6 @@ class FlightStatus
     {
         this._fuelUsed = 0;
         this._fuelMeter = undefined;
-        this._pumpFactor = 1.0;
         this.fuelPumped = undefined;
         this._fuelVector = 0.0;
         this._totalFuel = undefined;
@@ -924,7 +923,6 @@ class FlightStatus
                 fuelPoints = Math.abs(totalFuel - submittedFuel) / submittedFuel * 100 * fuelPointsPerPercentError;
 
             this.updateFuelMeter(fuelMeter, true);
-            this.updatePumpFactor(1.0, true);
             this.updateFuelPumped(fuelPumped, true);
             this.updateFuelVector(fuelVector, true);
             this.updateTotalFuel(totalFuel, true);
@@ -2493,7 +2491,7 @@ function makeElementEditable(element, getCurrentValue, setNewValue, setIfValidVa
     element.addEventListener('keydown', function(event) {
         if (event.keyCode == 13 || event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192) {
             let newTemp = parseInt(this.innerHTML);
-            if (event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 192) {
+            if (event.keyCode == 27 || event.keyCode == 192) {
                 if (setNewValue)
                     setNewValue();
             } else
