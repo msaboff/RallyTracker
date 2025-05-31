@@ -2866,13 +2866,13 @@ function start()
 {
     // Bonanza configuration
     EngineConfig.setConfigName("N7346R");
-    EngineConfig.appendConfig("Taxi", 1000, "Rich", 2.75, 0); // Was 2.10 then 2.45
-    EngineConfig.appendConfig("Runup", 1800, "Rich", 5.70, 0); // Was 5.79 then 6.75
-    EngineConfig.appendConfig("Takeoff", 2700, "Rich", 24.35, 105); // Was 26.09 then 26.57
-    EngineConfig.appendConfig("Climb", 2500, 25, 21.55, 125); // Was 21.07 then 21.85
-    EngineConfig.appendConfig("Cruise", 2400, 20, 14.48, 142); // Was 14.12 then 14.18
-    EngineConfig.appendConfig("Low Cruise", 2400, 20, 14.48, 142); // Was 14.12 then 14.18
-    EngineConfig.appendConfig("Pattern", 2700, 15, 10.82, 95); // Was 7.80 then 11.13
+    EngineConfig.appendConfig("Taxi", 1000, "Rich", 2.80, 0); // Was 2.10 then 2.45
+    EngineConfig.appendConfig("Runup", 1800, "Rich", 5.80, 0); // Was 5.79 then 6.75
+    EngineConfig.appendConfig("Takeoff", 2700, "Rich", 24.90, 105); // Was 26.09 then 26.57
+    EngineConfig.appendConfig("Climb", 2500, 25, 22.00, 130); // Was 21.07 then 21.85
+    EngineConfig.appendConfig("Cruise", 2400, 20, 14.80, 142); // Was 14.12 then 14.18
+    EngineConfig.appendConfig("Low Cruise", 2400, 20, 14.80, 142); // Was 14.12 then 14.18
+    EngineConfig.appendConfig("Pattern", 2700, 15, 11.10, 95); // Was 7.80 then 11.13
     EngineConfig.selectConfig(EngineConfig.Taxi);
     EngineConfig.selectPowerUnits("MP");
 
